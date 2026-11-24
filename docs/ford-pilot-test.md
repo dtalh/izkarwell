@@ -37,3 +37,12 @@ Ford admin SQL sonrasında `supabase/migrations/20261124_ford_report.sql` çalı
 - [ ] Operatör ve yetkisiz kullanıcı rapor kimlik RPC'sine erişemiyor; reviewer arşiv kayıtlarının kimliğini alamıyor.
 - [ ] Rapor ön izlemesi ve XLSX indirme, tüm filtrelenmiş kayıtları kapsıyor; Excel'de iki sayfa açılıyor.
 - [ ] Doğrudan ve ön izlemeden JPEG indirme doğru fotoğrafı ve dosya adını veriyor.
+
+## Genel kullanıcı yönetimi v1.2
+`20261124_platform_users.sql` çalıştırın, ardından SQL Editor'de sadece kendi doğrulanmış UID'niz için `insert into public.platform_admins(user_id) values ('UID') on conflict do nothing;` çalıştırın. Genel admin yetkisi modül admininden ayrı tutulur.
+- [ ] Genel admin kayıtlı kullanıcıları arar, Ford operator yetkisi verir ve kaldırır.
+- [ ] İkinci hesap yenilendiğinde modül görünür; kendi test kaydını oluşturur.
+- [ ] Yetki kaldırılınca yeni istekler reddedilir; kayıtlar saklanır.
+- [ ] Operator ve modül admini genel kullanıcı listesi / rol değişikliği RPC'lerine erişemez.
+- [ ] Rol geçmişinde işlemi yapan, hedef, tarih ve önceki/yeni rol doğru.
+- [ ] Sağlık ve mevcut bildirim işlevleri etkilenmez.
