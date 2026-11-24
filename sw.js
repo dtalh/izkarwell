@@ -1,6 +1,6 @@
 /* Release-scoped app-shell cache. OAuth responses and cloud requests are never cached. */
-const CACHE='izkarwell-v1.3.0';
-const ASSETS=['./','./index.html','./style.css','./cloud-namespace.js?v=1.3.0','./water.js?v=1.3.0','./smoking.js?v=1.3.0','./cloud-core.js?v=1.3.0','./cloud-auth.js?v=1.3.0','./notifications.js?v=1.3.0','./manifest.json','./icon-180.png','./icon-192.png','./icon-512.png','./privacy.html','./terms.html'];
+const CACHE='izkarwell-v1.3.0-ford-pilot1';
+const ASSETS=['./','./index.html','./style.css','./cloud-namespace.js?v=1.3.0','./water.js?v=1.3.0','./smoking.js?v=1.3.0','./cloud-core.js?v=1.3.0','./cloud-auth.js?v=1.3.0','./notifications.js?v=1.3.0','./ford-pilot.js?v=1.0.0','./manifest.json','./icon-180.png','./icon-192.png','./icon-512.png','./privacy.html','./terms.html'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS.map(a=>new Request(a,{cache:'reload'})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&k.startsWith('izkarwell-')).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
