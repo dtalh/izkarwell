@@ -30,3 +30,10 @@ on conflict(user_id,module_key) do update set role=excluded.role;
 - [ ] Geri yükleme ayrı test ortamında denenir (henüz uygulanmadı).
 
 Dışa aktarım en fazla 200 kayıtla sınırlı; taslaklar dahil değildir. Üretim öncesi bağımsız otomatik şifreli yedek, geri yükleme, işlem denetim kaydı, rol yönetim arayüzü, veri saklama ve şirket/KVKK onayı gerekir.
+
+## Yönetim portalı v1.1 testleri
+Ford admin SQL sonrasında `supabase/migrations/20261124_ford_report.sql` çalıştırın. Mevcut reviewer/admin rolü kullanılır.
+- [ ] Eski ve yeni kayıtlarda oluşturan hesap adı/e-posta doğru.
+- [ ] Operatör ve yetkisiz kullanıcı rapor kimlik RPC'sine erişemiyor; reviewer arşiv kayıtlarının kimliğini alamıyor.
+- [ ] Rapor ön izlemesi ve XLSX indirme, tüm filtrelenmiş kayıtları kapsıyor; Excel'de iki sayfa açılıyor.
+- [ ] Doğrudan ve ön izlemeden JPEG indirme doğru fotoğrafı ve dosya adını veriyor.
