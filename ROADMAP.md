@@ -26,3 +26,8 @@ Manuel SQL/Storage dışa aktarımı; CI veya ayrı güvenli sunucudan zamanlanm
 
 ## Sınırlar
 Mevcut fotoğrafın üzerine yazılmaz; fotoğraf değiştirme için ayrı sürümlü kanıt modeli gerekir. ZIP 200 fotoğraf / 200 MB ile sınırlı. Ford oranları yalnızca kayıtlı tamamlanmış teyitler üzerinden; gerçek teslimat performansı değildir. Genel Bakış sistem durumu yalnızca başarılı veri sorgusunu gösterir, yedek/kapasite/push sağlığı henüz ölçülmez. Statik ve sentetik testler gerçek sunucu ve iPhone testinin yerine geçmez.
+
+## Açık test sorunu — 24.11.2026
+- GitHub Actions ikinci çalışma [45419974065](https://github.com/dtalh/izkarwell/actions/runs/45419974065): 3/3 statik, 5/6 tarayıcı testi başarılı. Mobil WebKit kayıt düzenleme senaryosu, sahte Storage yanıtında `route.fulfill: body: expected string, got object` hatasıyla başarısız. Fotoğraf yükleme ve mükerrer devam adımları geçmiş olsa da düzenleme doğrulanmadı.
+- Kullanıcı bu bilinen sorunla mevcut test ortamına pilot yayın yapılmasını onayladı. Gerçek müşteri verisi yasak; kurumsal üretim onayı değildir.
+- Sonraki adım: test fixture binary yanıtını düzelt, mevcut fotoğrafı koruyarak düzenleme ve mükerrer uyarısında vazgeçme senaryosunu tekrar çalıştır. Gerçek iPhone ve Supabase yetki testleri ayrıca gerekli.
