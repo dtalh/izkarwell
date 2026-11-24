@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),base='https://dfexhuqdbcrjfhscmqjy.supabase.co',key='sb_publishable_orpnUOVOCwqMmNjsE0LVXQ_mG97SiVM',bucket='ford-pilot-private',dialog=$('fordPilotDialog');
 const sess=()=>window.izkarPushSession?.();
-let role='',owner='',busy=false,draft=null,offset=0,photoURL='',epoch=0,archiveReady=false,enhanced=false,editing=null;
+let role='',owner='',busy=false,draft=null,offset=0,photoURL='',epoch=0,archiveReady=false,enhanced=false,editing=null,duplicateResolve=null;
 const editors={account:window.izkarPhotoEditor.attach($('fordAccountFile'),$('fordAccountPreview')),ford:window.izkarPhotoEditor.attach($('fordAppFile'),$('fordAppPreview'))};
 const status=s=>$('fordStatus').textContent=s, canWrite=()=>['operator','admin'].includes(role), canReview=()=>['reviewer','admin'].includes(role);
 function guard(id){if(!id||sess()?.id!==id||owner!==id)throw Error('Oturum değişti.')}
@@ -25,7 +25,7 @@ function reset(){
  $('fordDate').value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Istanbul'}).format(new Date());
  $('fordForm').querySelector('button[type=submit]').textContent='Kaydı oluştur';toggle()
 }
-function clear(){hidePhoto();reset();$('fordList').replaceChildren();$('fordScope').textContent='';status('');offset=0}
+function clear(){resolveDuplicate(false);hidePhoto();reset();$('fordList').replaceChildren();$('fordScope').textContent='';status('');offset=0}
 function updateWork(){
  const allowed=['operator','reviewer','admin'].includes(role);
  $('fordPilotPanel').hidden=!allowed;$('homeWork').hidden=!allowed;$('workNav').hidden=!allowed;
@@ -59,8 +59,11 @@ function readable(err){return err.message==='Failed to fetch'?'Bağlantı kesild
 async function duplicateWarning(name,date,id,account){
  if(!enhanced)return true;
  const found=await (await rpc('ford_pilot_duplicate',{p_name:name,p_date:date,p_exclude:id||null},account)).json();
- return found!==true||confirm('Benzer kayıt bulundu: bu isim ve teslim tarihiyle daha önce bir kayıt açılmış. Yine de devam etmek istiyor musun?')
+ if(found!==true)return true;
+ return new Promise(resolve=>{duplicateResolve=resolve;$('fordDuplicatePrompt').hidden=false;$('fordDuplicatePrompt').scrollIntoView({block:'nearest'});$('fordDuplicateContinue').focus()})
 }
+function resolveDuplicate(value){$('fordDuplicatePrompt').hidden=true;if(duplicateResolve){const resolve=duplicateResolve;duplicateResolve=null;resolve(value)}}
+$('fordDuplicateCancel').onclick=()=>resolveDuplicate(false);$('fordDuplicateContinue').onclick=()=>resolveDuplicate(true);
 $('fordForm').onsubmit=async e=>{
  e.preventDefault();if(busy||!canWrite())return;
  const account=owner,name=$('fordName').value.trim(),date=$('fordDate').value,a=$('fordAccount').checked,f=$('fordApp').checked;
@@ -68,7 +71,8 @@ $('fordForm').onsubmit=async e=>{
  const id=editing?.id||draft?.id||crypto.randomUUID(),note=$('fordNote').value.trim(),af=$('fordAccountFile').files[0],ff=$('fordAppFile').files[0];
  setBusy(true);status('Kayıt hazırlanıyor…');
  try{
-  if(!draft&&(!editing||editing.customer_name!==name||editing.delivery_date!==date)&&!await duplicateWarning(name,date,editing?.id,account)){status('Kayıt oluşturulmadı.');return}
+  if(!draft&&(!editing||editing.customer_name!==name||editing.delivery_date!==date)&&!await duplicateWarning(name,date,editing?.id,account)){if(owner===account)status('İşlem iptal edildi.');return}
+  guard(account);
   if(editing){
    if(a)await ensurePhoto(id,'account',af,account);if(f)await ensurePhoto(id,'ford',ff,account);
    await rpc('ford_pilot_edit',{p_id:id,p_revision:editing.revision,p_name:name,p_date:date,p_account:a,p_ford:f,p_note:note},account);
