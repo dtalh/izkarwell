@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),base='https://dfexhuqdbcrjfhscmqjy.supabase.co',key='sb_publishable_orpnUOVOCwqMmNjsE0LVXQ_mG97SiVM',bucket='ford-pilot-private',dialog=$('fordPilotDialog');
 const sess=()=>window.izkarPushSession?.();
-let role='',owner='',busy=false,draft=null,offset=0,photoURL='',epoch=0;
+let role='',owner='',busy=false,draft=null,offset=0,photoURL='',epoch=0,archiveReady=false;
 const status=s=>$('fordStatus').textContent=s, canWrite=()=>['operator','admin'].includes(role), canReview=()=>['reviewer','admin'].includes(role);
 function guard(id){if(!id||sess()?.id!==id||owner!==id)throw Error('Oturum değişti.')}
 async function req(path,{method='GET',body,headers={}}={},id=owner){
@@ -70,7 +70,8 @@ $('fordForm').onsubmit=async e=>{
 };
 async function rows(start,limit,id=owner){
  const q=new URLSearchParams({select:'id,created_by,customer_name,delivery_date,account_done,ford_done,status,created_at,completed_at',order:'created_at.desc,id.desc',offset:String(start),limit:String(limit)});
- return (await req(rest+'ford_pilot_records?'+q,{},id)).json()
+ q.set('archived_at','is.null');
+ try{const result=await (await req(rest+'ford_pilot_records?'+q,{},id)).json();archiveReady=true;return result}catch(e){if(e.http!==400)throw e;archiveReady=false;q.delete('archived_at');return (await req(rest+'ford_pilot_records?'+q,{},id)).json()}
 }
 function button(label,fn){const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=label;b.onclick=fn;return b}
 function resume(r){
@@ -83,6 +84,11 @@ async function view(r,kind){
  const id=owner;hidePhoto();
  try{const b=await photo(r.id,kind,id);guard(id);if(!dialog.open)return;photoURL=URL.createObjectURL(b);$('fordPhoto').src=photoURL;$('fordPhotoView').hidden=false;$('fordPhotoView').scrollIntoView({block:'nearest'})}catch(e){if(owner===id)status(e.message)}
 }
+async function removeRecord(r){
+ if(busy||role!=='admin'||!archiveReady||!confirm(r.customer_name+' kaydı çöp kutusuna taşınsın mı? Fotoğraflar korunur.'))return;
+ const id=owner;setBusy(true);hidePhoto();
+ try{await rpc('ford_pilot_archive',{p_id:r.id,p_archive:true},id);guard(id);if(draft?.id===r.id)reset();await list(true);status('Kayıt çöp kutusuna taşındı. Yönetim portalından geri alabilirsin.')}catch(e){if(owner===id)status(e.message)}finally{setBusy(false)}
+}
 async function list(resetList){
  const id=owner;if(resetList){offset=0;$('fordList').replaceChildren()}
  const data=await rows(offset,25,id);guard(id);
@@ -91,6 +97,7 @@ async function list(resetList){
   h.textContent=r.customer_name;p.textContent=r.delivery_date+' · '+(r.status==='complete'?'Kaydedildi':'Taslak')+' · Ford Hesabım: '+(r.account_done?'Evet':'Hayır')+' · Ford: '+(r.ford_done?'Evet':'Hayır');section.append(h,p);
   if(r.status==='draft'&&r.created_by===id&&canWrite())section.append(button('Taslağa devam et',()=>resume(r)));
   if(r.status==='complete'){if(r.account_done)section.append(button('Hesabım fotoğrafı',()=>view(r,'account')));if(r.ford_done)section.append(button('Ford fotoğrafı',()=>view(r,'ford')))}
+  if(role==='admin'&&archiveReady)section.append(button('Sil',()=>removeRecord(r)));
   $('fordList').append(section)
  }
  offset+=data.length;$('fordMore').hidden=data.length<25;$('fordScope').textContent=(canReview()?'Yetkili olduğun test kayıtları':'Kendi test kayıtların')+' · '+offset+' kayıt gösteriliyor.'
