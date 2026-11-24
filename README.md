@@ -28,7 +28,7 @@ GitHub Pages statik PWA; Supabase Auth, PostgreSQL, RLS, özel Storage, Edge Fun
 GitHub Pages: main / root. iPhone: Safari → Paylaş → Ana Ekrana Ekle. PC: HTTPS adresini aç. Yeni sürüm sonrası uygulamayı yeniden aç. Supabase SQL ve Edge Function güncellemeleri ayrıca yönetim panelinde uygulanır. VAPID private key ve servis anahtarlarını repoya koymayın.
 
 ## Masaüstü yönetim portalı
-`admin/` aynı Google oturumunu kullanır. Ford pilot reviewer/admin yetkisiyle arama, tarih/durum filtreleri, kayıt bazlı oranlar, fotoğraf ve Excel uyumlu CSV raporu sunar. Admin çöp kutusuna taşıyabilir ve geri alabilir. Kurulum: `supabase/migrations/20261124_ford_admin.sql` (Ford pilot SQL sonrasında). Fotoğraflar arşivde korunur; kalıcı silme henüz yok. Toplu bildirim ve genel rol yönetimi henüz tamamlanmadı.
+`admin/` aynı Google oturumunu kullanır. Ford pilot reviewer/admin yetkisiyle arama, tarih/durum filtreleri, kayıt bazlı oranlar, fotoğraf ve gerçek XLSX raporu, kayıt oluşturan üye bilgisi ve JPEG indirme sunar. Admin çöp kutusuna taşıyabilir ve geri alabilir. Kurulum: `supabase/migrations/20261124_ford_admin.sql` (Ford pilot SQL sonrasında), ardından `supabase/migrations/20261124_ford_report.sql`. Fotoğraflar arşivde korunur; kalıcı silme henüz yok. Toplu bildirim ve genel rol yönetimi henüz tamamlanmadı.
 
 ## Ford Uygulamaları test pilotu
 İki bağımsız uygulama teyidi, TEST müşteri adı, teslim tarihi, fotoğraf, operatör/inceleyici/admin rolleri, taslak devamı ve fotoğraflı dışa aktarım. SQL kurulumu ve rol ataması olmadan görünmez. Gerçek müşteri verisi kullanılmaz. Fotoğraflar cihazda optimize edilir ve özel Storage alanına yüklenir (fotoğraf başına 10 MB sınırı). Otomatik bağımsız şifreli yedekleme ve geri yükleme henüz tamamlanmadı.
