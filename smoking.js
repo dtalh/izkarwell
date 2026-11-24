@@ -1,5 +1,5 @@
 'use strict';
-const $=id=>document.getElementById(id), KEY='duman-yok-personal-v2', H=3600000,D=24*H;
+const $=id=>document.getElementById(id), KEY='duman-yok-personal-v2'+(window.izkarAccount?'.'+window.izkarAccount:''), H=3600000,D=24*H;
 const urls={NCI:'https://smokefree.nci.nih.gov/quit-vaping-resources/nicotine-withdrawal-vaping',NHS:'https://www.nhs.uk/better-health/quit-smoking/ready-to-quit-smoking/what-could-happen-when-you-quit-smoking/',CDC:'https://www.cdc.gov/tobacco/about/benefits-of-quitting.html',WHO:'https://www.who.int/news-room/questions-and-answers/item/tobacco-health-benefits-of-smoking-cessation'};
 const health=[
  [20/60,'20 dakika','❤️','Kalbin için ilk adım','Nabız ve kan basıncı düşmeye başlayabilir.','WHO'],
@@ -16,7 +16,7 @@ const health=[
 const vapeHealth=[[24,'1 gün','🌱','Yeni bir alışkanlık','Nikotin yoksunluğu, istek veya huzursuzluk görülebilir.','NCI'],[72,'3 gün','🧠','Uyum süreci','Nikotin kullanmıyorsan vücudun nikotinsiz yaşama alışmaya devam eder; belirtiler kişiye göre değişir.','NCI'],[336,'2 hafta','💚','İlerlemeye devam','Yoksunluk belirtileri zamanla hafifleyebilir.','NCI']];
 const eligibleHealth=p=>p.kind==='vape'?vapeHealth:health.filter(a=>a[0]!==24||p.nicotine==='no');
 let state;try{state=JSON.parse(localStorage.getItem(KEY))}catch{};state=state&&state.profile?state:{profile:null,days:{},slips:[],reward:null};let mood='', storageOK=true;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch{storageOK=false;$('greeting').textContent='Cihazda kayıt yapılamadı. Tarayıcı depolama ayarlarını kontrol et.'}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));window.izkarCloudChanged?.()}catch{storageOK=false;$('greeting').textContent='Cihazda kayıt yapılamadı. Tarayıcı depolama ayarlarını kontrol et.'}}
 function localISO(t){const d=new Date(t);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
 const dayKey=t=>localISO(t).slice(0,10), money=n=>n.toLocaleString('tr-TR',{maximumFractionDigits:2,minimumFractionDigits:2}), num=n=>n.toLocaleString('tr-TR');
 function span(ms){let s=Math.floor(Math.max(0,ms)/1000);const d=Math.floor(s/86400);s%=86400;const h=Math.floor(s/3600);s%=3600;return `${d}g ${String(h).padStart(2,'0')}s ${String(Math.floor(s/60)).padStart(2,'0')}d ${String(s%60).padStart(2,'0')}sn`}
