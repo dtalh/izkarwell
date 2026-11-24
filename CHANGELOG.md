@@ -1,5 +1,14 @@
 # Sürüm notları
 
+## v2.0 — Super App Foundation (test pilotu)
+- İş ve Yaşam ana ekranı, yetki bazlı İş Merkezi, hızlı teyit/kayıt butonları, ayrı bildirim sekmesi; Aktif Yaşam ve Uyku kaldırıldı.
+- Yönetim Genel Bakış, gerçek aylık göstergeler, ortak navigasyon, açık/koyu tema, çıkış, kayıtlı filtreler ve sayfa boyutu.
+- Ford: engellemeyen mükerrer uyarısı, açıklama, revizyon kontrollü düzenleme, değişiklik geçmişi; eski fotoğraflar korunur.
+- Fotoğraf ön izleme, isteğe bağlı kırpma ve yükleme ilerlemesi; 10 MB sınırı korunur. Eksik uygulamaya ilk fotoğraf eklenir; mevcut fotoğrafın üzerine yazılmaz.
+- Personel filtresi ve grafikleri, aylık grafikler, üç sayfalı Excel, filtreli fotoğraf ZIP (en fazla 200 fotoğraf/200 MB), geniş fotoğraf görünümü.
+- Yeni eklemeli SQL kurulumu, statik testler, sentetik Chromium ve WebKit testleri için CI. Canlı veri/izin ve gerçek cihaz doğrulaması ayrıca gerekir.
+- Fatura ve uygunluk oranları, MFA, sağlık verisi mimarisi, otomatik yedek, dinamik formlar, React/TypeScript ve KVKK sonraya bırakıldı.
+
 ## Yönetim portalı v1.2 — Kullanıcı ve Yetki Yönetimi
 - Genel sistem yöneticisi ile modül yöneticisi ayrımı; ilk genel yönetici açık SQL atamasıyla tanımlanır.
 - Kayıtlı üyeleri ad/e-posta ile arama ve 50 kişilik sayfalama.
