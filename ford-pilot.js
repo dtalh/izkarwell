@@ -25,13 +25,20 @@ function reset(){
  $('fordForm').querySelector('button[type=submit]').textContent='Kaydı oluştur';toggle()
 }
 function clear(){hidePhoto();reset();$('fordList').replaceChildren();$('fordScope').textContent='';status('');offset=0}
+function updateWork(){
+ const allowed=['operator','reviewer','admin'].includes(role);
+ $('fordPilotPanel').hidden=!allowed;$('homeWork').hidden=!allowed;$('workNav').hidden=!allowed;
+ $('homeNewFord').hidden=!canWrite();$('fordAdminLink').hidden=!canReview();
+ $('workEmpty').hidden=allowed;$('workEmpty').textContent=sess()?'Bu hesaba henüz iş modülü atanmadı.':'İş modülleri için Profil bölümünden giriş yap.';
+ if(!allowed&&!$('page-work').hidden)document.querySelector('.tabbar [data-tab=home]').click();
+}
 async function access(){
  const seq=++epoch,s=sess();
- if(s?.id===owner&&role)return;
- role='';owner=s?.id||'';$('fordPilotPanel').hidden=true;
+ if(s?.id===owner&&role){updateWork();return;}
+ role='';owner=s?.id||'';updateWork();
  if(dialog.open)dialog.close();clear();if(!owner)return;
  const id=owner;
- try{const rows=await (await req(rest+'work_module_members?select=role&module_key=eq.ford-pilot&user_id=eq.'+encodeURIComponent(id),{},id)).json();if(seq!==epoch||sess()?.id!==id)return;role=rows[0]?.role||'';$('fordPilotPanel').hidden=!['operator','reviewer','admin'].includes(role)}catch{}
+ try{const rows=await (await req(rest+'work_module_members?select=role&module_key=eq.ford-pilot&user_id=eq.'+encodeURIComponent(id),{},id)).json();if(seq!==epoch||sess()?.id!==id)return;role=rows[0]?.role||'';updateWork()}catch{}
 }
 function setBusy(v){busy=v;for(const id of ['fordFields','fordRefresh','fordExport','fordMore'])$(id).disabled=v}
 async function compress(file){
@@ -120,7 +127,8 @@ $('fordExport').onclick=async()=>{
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='izkarwell-ford-test-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);status(records.length+' tamamlanmış kayıt ve fotoğrafları yedek dosyasına hazırlandı. Geri yükleme henüz yok.')
  }catch(e){status(e.message)}finally{setBusy(false)}
 };
-$('fordOpen').onclick=()=>{if(!role||!owner||busy)return;clear();$('fordForm').hidden=!canWrite();$('fordExport').hidden=!canReview();dialog.showModal();refresh()};
+function openFord(mode){if(!role||!owner||busy||dialog.open)return;clear();$('fordForm').hidden=!canWrite();$('fordExport').hidden=!canReview();dialog.showModal();refresh().then(()=>{if(dialog.open&&mode==='records')$('fordList').scrollIntoView({block:'start'})})}
+$('fordOpen').onclick=()=>openFord('records');$('homeNewFord').onclick=()=>openFord('new');$('homeFordRecords').onclick=()=>openFord('records');
 $('fordClose').onclick=()=>{if(!busy)dialog.close()};dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault()});dialog.addEventListener('close',clear);
 $('fordAccount').onchange=toggle;$('fordApp').onchange=toggle;$('fordPhotoClose').onclick=hidePhoto;$('fordRefresh').onclick=()=>refresh();$('fordMore').onclick=()=>refresh(false);
 window.addEventListener('izkarwell-auth',access);access();
