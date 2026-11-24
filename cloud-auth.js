@@ -47,12 +47,30 @@ function capture(){
  }
 }
 window.izkarCloudChanged=()=>{try{capture();if(active)status('Yerel kayıt hazır. Eşitleme bekliyor.')}catch{status('Eşitleme kuyruğu kaydedilemedi. Yedeğini al.')}};
+// Pin every data request to the intended account's access token.
+// Even a concurrent browser-tab account switch cannot attach another user's token.
+async function request(id,params,body){
+ const current=session;
+ if(current?.user?.id!==id||!current.access_token)throw Error('Oturum değişti.');
+ const headers={apikey:publicKey,Authorization:'Bearer '+current.access_token,Accept:'application/json'};
+ if(body){headers['Content-Type']='application/json';headers.Prefer='return=minimal'}
+ const response=await fetch(endpoint+'/rest/v1/sync_events'+(params?'?'+params:''),{
+  method:body?'POST':'GET',headers,body:body?JSON.stringify(body):undefined,
+  credentials:'omit',cache:'no-store',redirect:'error'
+ });
+ if(!response.ok){
+  let detail={};try{detail=await response.json()}catch{}
+  if(body&&response.status===409&&detail.code==='23505')return null;
+  throw Error('Veritabanı bağlantısı başarısız.');
+ }
+ return body?null:await response.json();
+}
 async function events(id){
  let all=[],offset=0;
  while(true){
-  if(session?.user?.id!==id)throw Error('Oturum değişti.');
-  const {data,error}=await client.from('sync_events').select('event_id,module,record_id,operation,payload,created_at').eq('user_id',id).order('created_at',{ascending:true}).order('event_id',{ascending:true}).range(offset,offset+499);
-  if(error)throw error;
+  const q=new URLSearchParams({select:'event_id,module,record_id,operation,payload,created_at',user_id:'eq.'+id,order:'created_at.asc,event_id.asc',offset:String(offset),limit:'500'});
+  const data=await request(id,q);
+  if(!Array.isArray(data))throw Error('Geçersiz sunucu yanıtı.');
   all.push(...data);if(data.length<500)return all;
   offset+=data.length;if(offset>50000)throw Error('Eşitleme geçmişi sınırı.');
  }
@@ -87,8 +105,7 @@ async function syncInner(){
  // Stable event IDs make retries idempotent; send in order.
  for(const e of [...m.pending]){
   if(session?.user?.id!==id)throw Error('Oturum değişti.');
-  const {error}=await client.from('sync_events').insert(e);
-  if(error&&error.code!=='23505')throw error;
+  await request(id,null,e);
   m=readMeta(id);m.pending=m.pending.filter(p=>p.event_id!==e.event_id);writeMeta(id,m);
  }
  const remote=await events(id);
@@ -164,7 +181,7 @@ async function start(){
 window.addEventListener('online',sync);
 window.addEventListener('focus',sync);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
-window.addEventListener('storage',e=>{if(e.key===marker||e.key===('duman-yok-personal-v2.'+active)||e.key===('izkarwell.water.v1.'+active)){if(!busy)location.reload()}});
+window.addEventListener('storage',e=>{if(e.key===marker){location.reload();return}if(e.key===('duman-yok-personal-v2.'+active)||e.key===('izkarwell.water.v1.'+active)){if(!busy)location.reload()}});
 setInterval(()=>{if(!document.hidden)sync()},20000);
 start();
 })();
