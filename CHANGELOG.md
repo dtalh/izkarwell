@@ -3,7 +3,7 @@
 ## Ford Uygulamaları — test pilotu (1.3 sonrası)
 - Ford Hesabım ve Ford Uygulaması ayrı teyit, TEST müşteri adı, teslim tarihi.
 - I-Deal e-posta eşleşmesi bilgilendirmesi.
-- Fotoğraf başına en fazla 250 KB JPEG hedefi; özel Storage.
+- Fotoğraf başına 10 MB giriş ve depolama sınırı; mevcut cihaz içi JPEG optimizasyonu korunur; özel Storage.
 - Operatör, inceleyici, admin rolleri; kendi veya tüm pilot kayıtları.
 - Taslak ve tamamlanmış kayıt ayrımı; eksik yüklemeye devam.
 - Tamamlanmış test kayıtları ve fotoğrafların JSON dışa aktarımı, SHA-256 özetleri.
