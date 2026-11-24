@@ -46,3 +46,16 @@ Ford admin SQL sonrasında `supabase/migrations/20261124_ford_report.sql` çalı
 - [ ] Operator ve modül admini genel kullanıcı listesi / rol değişikliği RPC'lerine erişemez.
 - [ ] Rol geçmişinde işlemi yapan, hedef, tarih ve önceki/yeni rol doğru.
 - [ ] Sağlık ve mevcut bildirim işlevleri etkilenmez.
+
+## Foundation Update kabul testleri
+Önce mevcut Ford admin/report/platform SQL kurulumlarını tamamlayın. `20261124_ford_enhancements.sql` çalıştırın. Yalnızca TEST kayıtları kullanın.
+- [ ] Mevcut iki veya daha fazla kayıt, fotoğraf, kullanıcı rolü ve arşiv korunur.
+- [ ] Üyesiz/operatör/inceleyici/admin ekranlarında yalnızca yetkili alanlar görünür.
+- [ ] Mükerrer uyarısında Vazgeç kayıt oluşturmaz; Yine de devam et ayrı kayıt oluşturur; başka operatörün detayları açıklanmaz.
+- [ ] Fotoğraf ön izleme/kırpma/yükleme yüzdesi, 10 MB sınırı; kesinti taslak bırakır.
+- [ ] Operatör kendi, modül admini tüm aktif tamamlanmış kayıtları düzenler; reviewer düzenleyemez. Eski fotoğraf korunur; eksik uygulamaya ilk fotoğraf eklenebilir.
+- [ ] İki cihaz aynı kaydı düzenlediğinde eski revision ile güncelleme reddedilir; geçmiş doğru eski/yeni değerleri gösterir.
+- [ ] Personel filtresi ve grafik, Excel 3 sayfa, ZIP ve JPEG içeriği filtreye uyumlu.
+- [ ] Açık/koyu tema, tam ekran, filtre kaydet/çağır, çıkış, Genel Bakış gerçek göstergeler.
+- [ ] Sağlık/su verileri ve push eski sürümdeki gibi çalışır.
+Otomatik UI testleri sentetik HTTP yanıtları kullanır; gerçek RLS veya üretim sunucusunu doğrulamaz.
