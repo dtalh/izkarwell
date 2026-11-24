@@ -22,7 +22,8 @@ function decodeKey(value){
 }
 async function api(action,extra={},session=current()){
  if(!session?.id||!session.token)throw Error('sign_in_required');
- const res=await fetch(endpoint,{method:'POST',headers:{apikey:key,Authorization:'Bearer '+session.token,'Content-Type':'application/json'},body:JSON.stringify({action,...extra}),cache:'no-store',credentials:'omit',redirect:'error',signal:AbortSignal.timeout(20000)});
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
+ let res;try{res=await fetch(endpoint,{method:'POST',headers:{apikey:key,Authorization:'Bearer '+session.token,'Content-Type':'application/json'},body:JSON.stringify({action,...extra}),cache:'no-store',credentials:'omit',redirect:'error',signal:controller.signal})}finally{clearTimeout(timeout)}
  const data=await res.json().catch(()=>({}));
  if(!res.ok)throw Error(data.error||'http_'+res.status);
  return data;
@@ -36,7 +37,7 @@ function buttons(connected=false){
  const has=!!current()?.id;
  el('pushEnable').disabled=busy||!has||!registration||!publicKey;
  el('pushTest').disabled=busy||!has||!connected;
- el('pushDisable').disabled=busy||!connected;
+ el('pushDisable').disabled=busy||!supported()||(!connected&&!localOwner());
 }
 function checkWorker(reg){
  return new Promise((resolve,reject)=>{
@@ -48,12 +49,12 @@ function checkWorker(reg){
  });
 }
 async function refresh(){
- const seq=++generation;buttons();
+ if(busy)return;const seq=++generation;buttons();
  if(!supported()){status('Bu ortam bildirimleri desteklemiyor. iPhone’da izkarwell.’i Safari ile ana ekrana ekleyip simgesinden aç.');return}
  const s=current();
  if(!s){owner='';publicKey=null;status('Bildirimleri açmak için Google hesabınla giriş yap.');return}
  try{
-  const reg=await navigator.serviceWorker.ready;
+  const reg=await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('worker_not_ready')),8000))]);
   await checkWorker(reg);
   if(seq!==generation||current()?.id!==s.id)return;
   registration=reg;
@@ -78,6 +79,7 @@ async function enable(){
   if(current()?.id!==s.id){await sub.unsubscribe();throw Error('sign_in_required')}
   try{await api('register',{device_id:deviceId(),subscription:sub.toJSON()},s)}
   catch(e){await sub.unsubscribe().catch(()=>{});throw e}
+  if(current()?.id!==s.id){await sub.unsubscribe().catch(()=>{});await api('disable',{device_id:deviceId()},s).catch(()=>{});throw Error('sign_in_required')}
   localStorage.setItem(ownerKey,s.id);
   status('Bildirimler etkin. Test bildirimi gönder.');
  }catch(e){status(explain(e))}
@@ -95,6 +97,7 @@ async function disconnect(s=current()){
  localStorage.removeItem(ownerKey);
 }
 window.izkarPushDisconnect=async()=>{
+ if(busy)throw Error('notification_operation_busy');
  if(!supported()||!localOwner())return;
  await disconnect();
 };
@@ -110,7 +113,7 @@ async function test(){
  busy=true;buttons();
  try{await api('test',{device_id:deviceId()},s);status('Bildirim gönderim servisi isteği kabul etti. Bildirim merkezini kontrol et.')}
  catch(e){status(explain(e))}
- finally{busy=false;buttons(true)}
+ finally{busy=false;buttons(localOwner()===current()?.id)}
 }
 el('pushEnable').onclick=enable;el('pushDisable').onclick=disable;el('pushTest').onclick=test;
 window.addEventListener('izkarwell-auth',()=>{if(owner!==current()?.id||!publicKey)refresh()});
