@@ -2,7 +2,8 @@
 'use strict';
 const $=id=>document.getElementById(id),base='https://dfexhuqdbcrjfhscmqjy.supabase.co',key='sb_publishable_orpnUOVOCwqMmNjsE0LVXQ_mG97SiVM',bucket='ford-pilot-private',dialog=$('fordPilotDialog');
 const sess=()=>window.izkarPushSession?.();
-let role='',owner='',busy=false,draft=null,offset=0,photoURL='',epoch=0,archiveReady=false;
+let role='',owner='',busy=false,draft=null,offset=0,photoURL='',epoch=0,archiveReady=false,enhanced=false,editing=null;
+const editors={account:window.izkarPhotoEditor.attach($('fordAccountFile'),$('fordAccountPreview')),ford:window.izkarPhotoEditor.attach($('fordAppFile'),$('fordAppPreview'))};
 const status=s=>$('fordStatus').textContent=s, canWrite=()=>['operator','admin'].includes(role), canReview=()=>['reviewer','admin'].includes(role);
 function guard(id){if(!id||sess()?.id!==id||owner!==id)throw Error('Oturum değişti.')}
 async function req(path,{method='GET',body,headers={}}={},id=owner){
@@ -16,11 +17,11 @@ async function photo(id,kind,account=owner){return (await req('/storage/v1/objec
 function hidePhoto(){if(photoURL)URL.revokeObjectURL(photoURL);photoURL='';$('fordPhoto').removeAttribute('src');$('fordPhotoView').hidden=true}
 function toggle(){
  for(const [check,file,label] of [['fordAccount','fordAccountFile','fordAccountFileLabel'],['fordApp','fordAppFile','fordAppFileLabel']]){
-  $(label).hidden=!$(check).checked;$(file).required=$(check).checked&&!draft;if(!$(check).checked)$(file).value=''
+  $(label).hidden=!$(check).checked;$(file).required=$(check).checked&&!draft&&!editing;if(!$(check).checked){$(file).value='';editors[check==='fordAccount'?'account':'ford'].reset()}
  }
 }
 function reset(){
- draft=null;$('fordForm').reset();for(const id of ['fordName','fordDate','fordAccount','fordApp'])$(id).disabled=false;
+ draft=null;editing=null;$('fordForm').reset();for(const e of Object.values(editors))e.reset();$('fordCancelEdit').hidden=true;$('fordNoteLabel').hidden=!enhanced;$('fordProgress').hidden=true;for(const id of ['fordName','fordDate','fordAccount','fordApp'])$(id).disabled=false;
  $('fordDate').value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Istanbul'}).format(new Date());
  $('fordForm').querySelector('button[type=submit]').textContent='Kaydı oluştur';toggle()
 }
@@ -40,44 +41,53 @@ async function access(){
  const id=owner;
  try{const rows=await (await req(rest+'work_module_members?select=role&module_key=eq.ford-pilot&user_id=eq.'+encodeURIComponent(id),{},id)).json();if(seq!==epoch||sess()?.id!==id)return;role=rows[0]?.role||'';updateWork()}catch{}
 }
-function setBusy(v){busy=v;for(const id of ['fordFields','fordRefresh','fordExport','fordMore'])$(id).disabled=v}
-async function compress(file){
- if(!file||file.size>10000000)throw Error('En fazla 10 MB boyutunda fotoğraf seç.');
- const url=URL.createObjectURL(file),img=new Image();
- try{img.src=url;await img.decode();if(!img.naturalWidth||!img.naturalHeight)throw Error('Fotoğraf okunamadı.');
- for(const size of [1600,1280,1024]){
-  const ratio=Math.min(1,size/Math.max(img.naturalWidth,img.naturalHeight)),canvas=document.createElement('canvas');
-  canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio));canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio));
-  const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
-  for(const quality of [.82,.72,.62]){const b=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));if(b&&b.size<=10000000)return b}
- }
- throw Error('Fotoğraf 10 MB sınırına indirilemedi. Daha yakın bir fotoğraf çek.');
- }finally{URL.revokeObjectURL(url)}
-}
+function setBusy(v){busy=v;if(!v)$('fordProgress').hidden=true;for(const id of ['fordFields','fordRefresh','fordExport','fordMore'])$(id).disabled=v}
 async function ensurePhoto(id,kind,file,account){
  try{await photo(id,kind,account);return}catch(e){if(![400,404].includes(e.http))throw e}
  if(!file)throw Error('Eksik teyit fotoğrafını seç.');
- const blob=await compress(file);await req(objectPath(id,kind),{method:'POST',headers:{'Content-Type':'image/jpeg','x-upsert':'false'},body:blob},account)
+ const blob=await window.izkarPhotoEditor.compress(file,editors[kind].crop());guard(account);
+ await new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest(),p=$('fordProgress');p.hidden=false;p.value=0;
+  xhr.open('POST',base+objectPath(id,kind));xhr.timeout=60000;
+  xhr.setRequestHeader('apikey',key);xhr.setRequestHeader('Authorization','Bearer '+sess().token);xhr.setRequestHeader('Content-Type','image/jpeg');xhr.setRequestHeader('x-upsert','false');
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)p.value=Math.round(e.loaded/e.total*100)};
+  xhr.onload=()=>{try{guard(account);if(xhr.status>=200&&xhr.status<300){p.value=100;resolve()}else reject(Error('Fotoğraf yüklenemedi (HTTP '+xhr.status+').'))}catch(e){reject(e)}};
+  xhr.onerror=xhr.ontimeout=xhr.onabort=()=>reject(Error('Fotoğraf yüklemesi kesildi. Yeniden deneyebilirsin.'));xhr.send(blob)
+ });
+}
+function readable(err){return err.message==='Failed to fetch'?'Bağlantı kesildi. İnternetini kontrol edip yeniden dene.':err.message||'İşlem başarısız.'}
+async function duplicateWarning(name,date,id,account){
+ if(!enhanced)return true;
+ const found=await (await rpc('ford_pilot_duplicate',{p_name:name,p_date:date,p_exclude:id||null},account)).json();
+ return found!==true||confirm('Benzer kayıt bulundu: bu isim ve teslim tarihiyle daha önce bir kayıt açılmış. Yine de devam etmek istiyor musun?')
 }
 $('fordForm').onsubmit=async e=>{
  e.preventDefault();if(busy||!canWrite())return;
  const account=owner,name=$('fordName').value.trim(),date=$('fordDate').value,a=$('fordAccount').checked,f=$('fordApp').checked;
  if(!/^TEST .{1,115}$/.test(name)){status('Örnek isim TEST ile başlamalı.');return}
- const id=draft?.id||crypto.randomUUID(),af=$('fordAccountFile').files[0],ff=$('fordAppFile').files[0];
+ const id=editing?.id||draft?.id||crypto.randomUUID(),note=$('fordNote').value.trim(),af=$('fordAccountFile').files[0],ff=$('fordAppFile').files[0];
  setBusy(true);status('Kayıt hazırlanıyor…');
  try{
-  await rpc('ford_pilot_begin',{p_id:id,p_name:name,p_date:date,p_account:a,p_ford:f},account);
-  draft={id,customer_name:name,delivery_date:date,account_done:a,ford_done:f,created_by:account,status:'draft'};
+  if(!draft&&(!editing||editing.customer_name!==name||editing.delivery_date!==date)&&!await duplicateWarning(name,date,editing?.id,account)){status('Kayıt oluşturulmadı.');return}
+  if(editing){
+   if(a)await ensurePhoto(id,'account',af,account);if(f)await ensurePhoto(id,'ford',ff,account);
+   await rpc('ford_pilot_edit',{p_id:id,p_revision:editing.revision,p_name:name,p_date:date,p_account:a,p_ford:f,p_note:note},account);
+   guard(account);reset();await list(true);status('Kayıt güncellendi. Değişiklik geçmişi kaydedildi.');return
+  }
+  const payload={p_id:id,p_name:name,p_date:date,p_account:a,p_ford:f};
+  if(enhanced)await rpc('ford_pilot_begin_v2',{...payload,p_note:note},account);else await rpc('ford_pilot_begin',payload,account);
+  draft={id,customer_name:name,delivery_date:date,account_done:a,ford_done:f,created_by:account,status:'draft',incomplete_note:note};
   for(const id of ['fordName','fordDate','fordAccount','fordApp'])$(id).disabled=true;toggle();
   if(a){status('Ford Hesabım fotoğrafı kaydediliyor…');await ensurePhoto(id,'account',af,account)}
   if(f){status('Ford fotoğrafı kaydediliyor…');await ensurePhoto(id,'ford',ff,account)}
   await rpc('ford_pilot_finish',{p_id:id},account);guard(account);reset();status('Kayıt sunucuya kaydedildi.');await list(true)
- }catch(err){if(owner===account)status((err.message||'İşlem başarısız.')+' Taslak varsa kayıtlar bölümünden devam edebilirsin.')}
+ }catch(err){if(owner===account)status(readable(err)+' Taslak varsa kayıtlar bölümünden devam edebilirsin.')}
  finally{setBusy(false)}
 };
 async function rows(start,limit,id=owner){
- const q=new URLSearchParams({select:'id,created_by,customer_name,delivery_date,account_done,ford_done,status,created_at,completed_at',order:'created_at.desc,id.desc',offset:String(start),limit:String(limit)});
- q.set('archived_at','is.null');
+ const fields='id,created_by,customer_name,delivery_date,account_done,ford_done,status,created_at,completed_at';
+ const q=new URLSearchParams({select:fields+',incomplete_note,revision',order:'created_at.desc,id.desc',offset:String(start),limit:String(limit),archived_at:'is.null'});
+ try{const result=await (await req(rest+'ford_pilot_records?'+q,{},id)).json();archiveReady=true;enhanced=true;$('fordNoteLabel').hidden=false;return result}catch(e){if(e.http!==400)throw e;enhanced=false;$('fordNoteLabel').hidden=true;q.set('select',fields)}
  try{const result=await (await req(rest+'ford_pilot_records?'+q,{},id)).json();archiveReady=true;return result}catch(e){if(e.http!==400)throw e;archiveReady=false;q.delete('archived_at');return (await req(rest+'ford_pilot_records?'+q,{},id)).json()}
 }
 function button(label,fn){const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=label;b.onclick=fn;return b}
@@ -85,8 +95,14 @@ function resume(r){
  if(busy)return;reset();draft=r;
  $('fordName').value=r.customer_name;$('fordDate').value=r.delivery_date;$('fordAccount').checked=r.account_done;$('fordApp').checked=r.ford_done;
  for(const id of ['fordName','fordDate','fordAccount','fordApp'])$(id).disabled=true;toggle();
- $('fordForm').querySelector('button[type=submit]').textContent='Taslağı tamamla';$('fordForm').scrollIntoView({block:'start'});status('Eksik fotoğrafları seç. Önceden yüklenenler korunacak.')
+ $('fordNote').value=r.incomplete_note||'';$('fordCancelEdit').hidden=false;$('fordForm').querySelector('button[type=submit]').textContent='Taslağı tamamla';$('fordForm').scrollIntoView({block:'start'});status('Eksik fotoğrafları seç. Önceden yüklenenler korunacak.')
 }
+function edit(r){
+ if(busy||!enhanced||!canWrite()||(role!=='admin'&&r.created_by!==owner))return;
+ reset();editing=r;$('fordName').value=r.customer_name;$('fordDate').value=r.delivery_date;$('fordAccount').checked=r.account_done;$('fordApp').checked=r.ford_done;$('fordNote').value=r.incomplete_note||'';
+ $('fordCancelEdit').hidden=false;$('fordForm').querySelector('button[type=submit]').textContent='Değişiklikleri kaydet';toggle();$('fordForm').scrollIntoView({block:'start'});status('Mevcut fotoğraflar korunur. Eksik uygulamaya ilk fotoğrafını ekleyebilirsin.')
+}
+$('fordCancelEdit').onclick=()=>{if(!busy){reset();status('Yeni kayıt oluşturabilirsin.')}};
 async function view(r,kind){
  const id=owner;hidePhoto();
  try{const b=await photo(r.id,kind,id);guard(id);if(!dialog.open)return;photoURL=URL.createObjectURL(b);$('fordPhoto').src=photoURL;$('fordPhotoView').hidden=false;$('fordPhotoView').scrollIntoView({block:'nearest'})}catch(e){if(owner===id)status(e.message)}
@@ -101,9 +117,10 @@ async function list(resetList){
  const data=await rows(offset,25,id);guard(id);
  for(const r of data){
   const section=document.createElement('section'),h=document.createElement('h2'),p=document.createElement('p');
-  h.textContent=r.customer_name;p.textContent=r.delivery_date+' · '+(r.status==='complete'?'Kaydedildi':'Taslak')+' · Ford Hesabım: '+(r.account_done?'Evet':'Hayır')+' · Ford: '+(r.ford_done?'Evet':'Hayır');section.append(h,p);
+  h.textContent=r.customer_name;p.textContent=r.delivery_date+' · '+(r.status==='complete'?'Kaydedildi':'Taslak')+' · Ford Hesabım: '+(r.account_done?'Evet':'Hayır')+' · Ford: '+(r.ford_done?'Evet':'Hayır');section.append(h,p);if(r.incomplete_note){const note=document.createElement('p');note.textContent='Açıklama: '+r.incomplete_note;section.append(note)}
   if(r.status==='draft'&&r.created_by===id&&canWrite())section.append(button('Taslağa devam et',()=>resume(r)));
   if(r.status==='complete'){if(r.account_done)section.append(button('Hesabım fotoğrafı',()=>view(r,'account')));if(r.ford_done)section.append(button('Ford fotoğrafı',()=>view(r,'ford')))}
+  if(enhanced&&r.status==='complete'&&canWrite()&&(role==='admin'||r.created_by===id))section.append(button('Düzenle',()=>edit(r)));
   if(role==='admin'&&archiveReady)section.append(button('Sil',()=>removeRecord(r)));
   $('fordList').append(section)
  }
