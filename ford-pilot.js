@@ -35,16 +35,16 @@ async function access(){
 }
 function setBusy(v){busy=v;for(const id of ['fordFields','fordRefresh','fordExport','fordMore'])$(id).disabled=v}
 async function compress(file){
- if(!file||file.size>20*1024*1024)throw Error('En fazla 20 MB boyutunda fotoğraf seç.');
+ if(!file||file.size>10000000)throw Error('En fazla 10 MB boyutunda fotoğraf seç.');
  const url=URL.createObjectURL(file),img=new Image();
  try{img.src=url;await img.decode();if(!img.naturalWidth||!img.naturalHeight)throw Error('Fotoğraf okunamadı.');
  for(const size of [1600,1280,1024]){
   const ratio=Math.min(1,size/Math.max(img.naturalWidth,img.naturalHeight)),canvas=document.createElement('canvas');
   canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio));canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio));
   const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
-  for(const quality of [.82,.72,.62]){const b=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));if(b&&b.size<=250000)return b}
+  for(const quality of [.82,.72,.62]){const b=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));if(b&&b.size<=10000000)return b}
  }
- throw Error('Fotoğraf 250 KB sınırına indirilemedi. Daha yakın bir fotoğraf çek.');
+ throw Error('Fotoğraf 10 MB sınırına indirilemedi. Daha yakın bir fotoğraf çek.');
  }finally{URL.revokeObjectURL(url)}
 }
 async function ensurePhoto(id,kind,file,account){
