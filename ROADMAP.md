@@ -1,0 +1,28 @@
+# izkarwell. — Kararlar ve yol haritası (24.11.2026)
+
+## Kapsam
+Kurumsal çalışma platformu + isteğe bağlı kişisel İyi Yaşam. Aktif Yaşam, Uyku ve müşteri ziyaretleri kapsam dışı. Ford modülü yalnızca TEST pilotu; gerçek müşteri verisi kullanılmaz.
+
+## Geri dönüş noktası
+Kaynak kodu: `backup/pre-superapp-2026-11-24`, commit `5b7d2ebb14e1ff1c3c136bb3e5c0e4e24dd21230`. GitHub ZIP kopyası bu committen alınabilir.
+Kullanıcı canlı Supabase ve Storage yedeğini pilot aşamasında ertelemeyi tercih etti. Bu nedenle kaynak kodu geri dönüşü canlı veritabanı geri yüklemesi değildir. Geri dönüş gerektiğinde eski kodu yeni bir commit/revert ile yayınla; mevcut kayıtları, yeni alanları ve fotoğrafları silme. Migration geriye uyumlu tutulmuştur. Uygulama önbelleği güncellenmeli.
+
+## Onaylanan Foundation kapsamı
+Mobil ve masaüstü tasarım, Ford teyit işlevleri, otomatik test altyapısı. Mevcut sağlık ve su modülleri ve bildirim davranışı korunur.
+
+## Ertelenen konular (ayrı onay ile)
+- Fatura/teslimat listesi aktarımı ve gerçek kurulum paydası. Ford Hesabım: tüzel müşterileri hariç tut; filo hem Ford Hesabım hem Ford uygulaması için hariç. Tüzel Ford uygulaması uygunluğu ayrıca netleştirilecek. Bu aşamada hesaplama değiştirilmedi.
+- MFA, oturum ve yetki sertleştirme, dosya doğrulama ve kapsamlı canlı güvenlik testi; kurumsal yayından önce zorunlu değerlendirme.
+- Kişisel sağlık verilerine iş yöneticilerinin erişmemesi; yalnızca yerel cihaz saklama veya ayrı altyapı seçeneği ayrıca değerlendirilecek.
+- Bağımsız şifreli otomatik veritabanı/Storage yedekleme ve test geri yüklemesi. Free paket otomatik proje yedeği sağlamaz. Pro DB yedeği dosya içeriğini kapsamaz.
+- Toplu bildirim ve duyuru merkezi; alıcı izni, hedef kitle, teslimat raporu.
+- Dinamik formlar/checklistler ve kullanıcının yeni iş fikirleri.
+- React/TypeScript/Vite mimari geçişi; mevcut işlevler finalize edildikten sonra ayrıca öğrenme ve değerlendirme.
+- KVKK, yurt dışı aktarım, kurum onayı, saklama/imha, barındırma ve kurumsal hesap sahipliği.
+- Mevcut paket bitince kapsamlı tekrar denetimi, yeni fikirler ve önceliklendirme.
+
+## Yedek seçenekleri
+Manuel SQL/Storage dışa aktarımı; CI veya ayrı güvenli sunucudan zamanlanmış şifreli bağımsız dosya/DB yedeği; Supabase Pro + bağımsız Storage yedeği. Gerçek kayıtlar ve sırlar public GitHub'a konmaz.
+
+## Sınırlar
+Mevcut fotoğrafın üzerine yazılmaz; fotoğraf değiştirme için ayrı sürümlü kanıt modeli gerekir. ZIP 200 fotoğraf / 200 MB ile sınırlı. Ford oranları yalnızca kayıtlı tamamlanmış teyitler üzerinden; gerçek teslimat performansı değildir. Genel Bakış sistem durumu yalnızca başarılı veri sorgusunu gösterir, yedek/kapasite/push sağlığı henüz ölçülmez. Statik ve sentetik testler gerçek sunucu ve iPhone testinin yerine geçmez.
