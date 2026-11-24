@@ -1,24 +1,40 @@
-# izkarwell. v1.0.0
-Çalışan Sağlığı ve İyi Yaşam Platformu — pilot sürüm.
+# izkarwell.
 
-## Kurulum
-1. GitHub'da `izkarwell` adlı bir Public repository oluşturun (README ile başlatılabilir).
-2. ZIP içindeki dosyaları deponun kök dizinine yükleyin. ZIP dosyasını doğrudan yüklemeyin.
-3. Settings → Pages → Build and deployment → Source: Deploy from a branch → main / (root) → Save.
-4. Pages ekranında gösterilen HTTPS adresini açın.
-5. iPhone: Safari → Paylaş → Ana Ekrana Ekle. PC: tarayıcı üzerinden kullanın.
+**Çalışan deneyimi ve modüler dijital iş platformu** — PWA pilotu.
+
+[Uygulamayı aç](https://dtalh.github.io/izkarwell/) · [Sürüm notları](CHANGELOG.md) · [Ford pilot test kılavuzu](docs/ford-pilot-test.md)
+
+## Mevcut özellikler
+- Dumansız Yaşam: sigara ve elektronik sigara takibi, tasarruf, genel sağlık bilgileri, kriz sayacı ve hedefler.
+- Su Tüketimi: günlük hedef, hızlı kayıt ve 7 günlük grafik.
+- Google OAuth, isteğe bağlı bulut eşitleme, ayrı yerel ve hesap kayıtları.
+- iPhone ve PC Web Push, cihaz bazlı otomatik su hatırlatmaları.
 
 ## Mimari
-- `index.html`: ortak görünüm, gezinme ve modül kartları.
-- `style.css`: ortak tema, mobil/masaüstü düzeni.
-- `smoking.js`: Dumansız Yaşam (sigara/elektronik sigara, süre, tasarruf, sağlık bilgileri, kriz sayacı, hedefler).
-- `water.js`: su kaydı, günlük hedef ve 7 günlük grafik.
-- `manifest.json`, `sw.js`, `icon-*.png`: PWA yükleme ve önbellek altyapısı.
+GitHub Pages statik PWA; Supabase Auth, PostgreSQL, RLS, özel Storage, Edge Functions, Cron ve Vault.
 
-## Veri ve güncelleme
-Kişisel kayıtlar tarayıcıda localStorage ile saklanır. Sunucuya gönderilmez, hesap veya otomatik cihaz eşitlemesi yoktur. Profil sekmesinden yedek alıp başka cihaza taşıyabilirsiniz. Eski Duman Yok yedekleri desteklenir. Alan adı, protokol veya tarayıcı değişirse eski kayıtlar kendiliğinden taşınmaz. Yedek dosyası kişisel bilgi içerir; GitHub'a yüklemeyin.
+| Dosya | İşlev |
+|---|---|
+| index.html / style.css | Ortak arayüz |
+| smoking.js / water.js | İyi yaşam modülleri |
+| cloud-namespace.js / cloud-core.js / cloud-auth.js | Hesap ayrımı, eşitleme ve kimlik doğrulama |
+| notifications.js / sw.js | Bildirimler ve PWA |
+| ford-pilot.js | Yetkili test modülü, fotoğraf sıkıştırma ve kayıt takibi |
+| supabase/migrations/ | Veritabanı kurulumu |
+| supabase/functions/izkarwell-push/index.ts | Bildirim servisi |
+| supabase/setup/ | Cron kurulumu |
 
-Yeni modülleri ayrı JS dosyalarında geliştirin. Eski kayıt anahtarlarını değiştirmeyin; veri şeması değişirse uyumlu geçiş ekleyin. Her yayında sw.js içindeki cache sürümünü artırın, yeni dosyaları ASSETS listesine ekleyin. Önce test edin; aynı depo ve URL üzerinden yayınlayın. Service worker yeni sürümü alana kadar uygulamayı yeniden açmak gerekebilir.
+## Dağıtım
+GitHub Pages: main / root. iPhone: Safari → Paylaş → Ana Ekrana Ekle. PC: HTTPS adresini aç. Yeni sürüm sonrası uygulamayı yeniden aç. Supabase SQL ve Edge Function güncellemeleri ayrıca yönetim panelinde uygulanır. VAPID private key ve servis anahtarlarını repoya koymayın.
+
+## Ford Uygulamaları test pilotu
+İki bağımsız uygulama teyidi, TEST müşteri adı, teslim tarihi, fotoğraf, operatör/inceleyici/admin rolleri, taslak devamı ve fotoğraflı dışa aktarım. SQL kurulumu ve rol ataması olmadan görünmez. Gerçek müşteri verisi kullanılmaz. Fotoğraflar özel Storage alanına yüklenir. Otomatik bağımsız şifreli yedekleme ve geri yükleme henüz tamamlanmadı.
+
+## Güvenlik
+Google girişi sağlık eşitlemesini kendiliğinden açmaz. İş ve kişisel sağlık verileri ayrı tutulur. Kurumsal kullanım öncesi şirket onayı, KVKK ve yurt dışı aktarımı değerlendirmesi, saklama/silme politikası, yetki ve geri yükleme testleri gereklidir. Yedekleri güvenli saklayın. Sağlık içeriği genel bilgilendirmedir.
+
+## Yol haritası
+Yönetim paneli, toplu bildirim, modül bazlı roller, ortak fotoğraf/dosya altyapısı, dinamik form ve checklist, raporlama. Toplu bildirim şeması ayrı geliştirme dalında; gönderim henüz yok. Müşteri ziyaretleri kapsam dışıdır. Yeni modüller ihtiyaca göre belirlenir.
 
 ## Test durumu
-JS sözdizimi ve izole Chromium arayüzü kontrol edildi: su ekleme/hedef, simüle depolama, vape profili, kriz sayacı ve iki ekran genişliği. Gerçek HTTPS, service worker çevrimdışı çalışma, gerçek iPhone ve kalıcı tarayıcı depolaması henüz doğrulanmadı. Kurumsal dağıtım öncesi marka onayı, gizlilik ve güvenlik değerlendirmesi yapılmalıdır. Sağlık bilgileri genel niteliktedir, kişisel ölçüm veya tıbbi öneri değildir.
+Kullanıcı Google giriş/eşitleme, iPhone ve PC test bildirimleri ve otomatik su hatırlatmalarının çalıştığını bildirdi. Ford pilotu için uçtan uca Supabase, cihaz, erişim ve geri yükleme testleri bekliyor.

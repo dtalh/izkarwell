@@ -1,0 +1,41 @@
+# Sürüm notları
+
+## Ford Uygulamaları — test pilotu (1.3 sonrası)
+- Ford Hesabım ve Ford Uygulaması ayrı teyit, TEST müşteri adı, teslim tarihi.
+- I-Deal e-posta eşleşmesi bilgilendirmesi.
+- Fotoğraf başına en fazla 250 KB JPEG hedefi; özel Storage.
+- Operatör, inceleyici, admin rolleri; kendi veya tüm pilot kayıtları.
+- Taslak ve tamamlanmış kayıt ayrımı; eksik yüklemeye devam.
+- Tamamlanmış test kayıtları ve fotoğrafların JSON dışa aktarımı, SHA-256 özetleri.
+- SQL ve rol ataması gerekir. Uçtan uca doğrulama, otomatik yedek ve geri yükleme bekliyor.
+
+## v1.4 — ayrı geliştirme dalı, canlı değil
+- Yönetim paneli ve toplu bildirim planı.
+- Bildirim yöneticisi ve duyuru tercihi SQL şeması. Gönderim ve arayüz tamamlanmadı.
+
+## v1.3.0 — otomatik su hatırlatmaları
+- Cihaz bazlı tercih, sıklık ve saat aralığı; Türkiye saati.
+- Beş dakikalık Cron kontrolü, Vault kimlik doğrulaması, tekrar gönderimi engelleyen slot kontrolü.
+- Sağlık kayıtları okunmadan nötr bildirim.
+- Kullanıcı otomatik hatırlatmayı doğruladı. Su hedefine göre durdurma henüz yok.
+
+## v1.2.1 — bildirim iyileştirmeleri
+- Cihaz içi test, bağlantı yenileme, izin ve hata bilgileri.
+- iOS izin akışı, service worker sürüm kontrolü.
+- VAPID biçim doğrulaması ve modern Supabase secret key desteği.
+- Kullanıcı iPhone ve PC gerçek test bildirimlerini doğruladı.
+
+## v1.2.0 — Web Push
+- Oturum doğrulamalı cihaz kaydı, test ve devre dışı bırakma.
+- Özel push_devices tablosu, test cooldown ve abonelik kontrolü.
+
+## v1.1 — hesap ve eşitleme
+- Google OAuth, isteğe bağlı bulut senkronizasyonu.
+- Misafir ve hesap kayıtlarının ayrılması, olay bazlı eşitleme.
+- Gizlilik/şartlar, sürümlü PWA önbelleği.
+- Kullanıcı giriş ve eşitlemeyi doğruladı.
+
+## v1.0.0 — ilk PWA
+- Dumansız Yaşam, sağlık zaman çizelgesi, tasarruf, kriz sayacı ve ödül.
+- Su Tüketimi, hedef ve haftalık görünüm.
+- Yerel saklama, JSON yedek ve cihaz aktarımı, mobil/masaüstü arayüz.
