@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id),base='https://dfexhuqdbcrjfhscmqjy.supabase.co',key='sb_publishable_orpnUOVOCwqMmNjsE0LVXQ_mG97SiVM';
 let client,session=null,role='',records=[],filtered=[],page=0,busy=false,epoch=0,url='',photoEpoch=0,photoName='',creatorReady=false,reportSnapshot=null,enhanced=false,editing=null,size=25;
 const status=s=>$('status').textContent=s;
-function clearPhoto(){$('downloadPhoto').disabled=true;photoName='';photoEpoch++;if(url)URL.revokeObjectURL(url);url='';$('photoImage').removeAttribute('src');$('photoImage').hidden=true}
+function clearPhoto(){$('zoomPhoto').disabled=true;$('photoDialog').classList.remove('photo-full');$('zoomPhoto').textContent='Tam ekran';$('downloadPhoto').disabled=true;photoName='';photoEpoch++;if(url)URL.revokeObjectURL(url);url='';$('photoImage').removeAttribute('src');$('photoImage').hidden=true}
 function reset(){enhanced=false;editing=null;busy=false;for(const k of ['editRecordDialog','recordHistoryDialog'])if($(k).open)$(k).close();$('person').replaceChildren(new Option('Tümü',''));$('staffChart').replaceChildren();$('monthChart').replaceChildren();$('signOut').hidden=!session;$('userAdminLink').hidden=true;reportSnapshot=null;creatorReady=false;if($('reportDialog').open)$('reportDialog').close();records=[];filtered=[];page=0;role='';$('workspace').hidden=true;$('records').replaceChildren();$('identity').textContent='';clearPhoto();if($('photoDialog').open)$('photoDialog').close()}
 async function req(path,options={},id=session?.user?.id){
  const s=session;if(!id||s?.user?.id!==id||!s.access_token)throw Error('Oturum yok.');
@@ -91,7 +91,7 @@ function render(){
 async function photo(r,kind){
  clearPhoto();const seq=photoEpoch,id=session?.user?.id,n=epoch;
  $('photoTitle').textContent=r.customer_name+' · '+(kind==='account'?'Ford Hesabım':'Ford');$('photoStatus').textContent='Fotoğraf yükleniyor…';if(!$('photoDialog').open)$('photoDialog').showModal();
- try{const response=await req('/storage/v1/object/authenticated/ford-pilot-private/'+r.id+'/'+kind+'.jpg',{},id);const blob=await response.blob();if(n!==epoch||seq!==photoEpoch||!$('photoDialog').open)return;url=URL.createObjectURL(blob);photoName=filename(r,kind);$('downloadPhoto').disabled=false;$('photoImage').src=url;$('photoImage').hidden=false;$('photoStatus').textContent=''}catch(e){if(n===epoch&&seq===photoEpoch)$('photoStatus').textContent=e.message}
+ try{const response=await req('/storage/v1/object/authenticated/ford-pilot-private/'+r.id+'/'+kind+'.jpg',{},id);const blob=await response.blob();if(n!==epoch||seq!==photoEpoch||!$('photoDialog').open)return;$('zoomPhoto').disabled=false;url=URL.createObjectURL(blob);photoName=filename(r,kind);$('downloadPhoto').disabled=false;$('photoImage').src=url;$('photoImage').hidden=false;$('photoStatus').textContent=''}catch(e){if(n===epoch&&seq===photoEpoch)$('photoStatus').textContent=e.message}
 }
 async function archive(r){
  if(busy||role!=='admin'||!confirm(r.customer_name+' kaydı '+(r.archived_at?'geri alınsın mı?':'çöp kutusuna taşınsın mı? Fotoğraflar korunur.')))return;
@@ -124,6 +124,7 @@ $('closeRecordHistory').onclick=()=>$('recordHistoryDialog').close();$('recordHi
 function filename(r,kind){return (r.customer_name.replace(/[^\p{L}\p{N} _-]/gu,'_').slice(0,70)||'musteri')+'_'+r.delivery_date+'_'+(kind==='account'?'ford-hesabim':'ford')+'_'+r.id.slice(0,8)+'.jpg'}
 function saveUrl(u,name){const a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove()}
 function saveBlob(b,name){const u=URL.createObjectURL(b);saveUrl(u,name);setTimeout(()=>URL.revokeObjectURL(u),60000)}
+$('zoomPhoto').onclick=()=>{const full=$('photoDialog').classList.toggle('photo-full');$('zoomPhoto').textContent=full?'Normal boyut':'Tam ekran'};
 $('downloadPhoto').onclick=()=>{if(url&&photoName&&role)saveUrl(url,photoName)};
 async function downloadDirect(r,kind){
  if(!role)return;const n=epoch,id=session?.user?.id;
@@ -162,6 +163,9 @@ $('report').onclick=()=>{
 };
 $('closeReport').onclick=()=>$('reportDialog').close();$('reportDialog').addEventListener('close',()=>{reportSnapshot=null;$('reportPreview').replaceChildren()});$('reportDownload').onclick=()=>downloadReport(reportSnapshot);
 for(const k of ['search','from','to','state','archive','person'])$(k).addEventListener(k==='search'?'input':'change',apply);
+const filterKey=()=>session?.user?.id?'izkarwell.admin.ford.filter.'+session.user.id:null;
+$('saveFilters').onclick=()=>{const key=filterKey();if(!role||!key)return;try{localStorage.setItem(key,JSON.stringify(Object.fromEntries(['from','to','state','person','pageSize'].map(k=>[k,$(k).value]))));status('Tarih, durum, personel ve sayfa boyutu filtreleri bu cihazda kaydedildi. Müşteri adı kaydedilmez.')}catch{status('Filtre kaydedilemedi.')}};
+$('loadFilters').onclick=()=>{const key=filterKey();if(!role||!key)return;try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(!saved){status('Bu cihazda kayıtlı filtre yok.');return}for(const k of ['from','to','state','person','pageSize'])if(typeof saved[k]==='string')$(k).value=saved[k];if(!$('state').value)$('state').value='all';if(!$('pageSize').value)$('pageSize').value='25';size=Number($('pageSize').value)||25;apply();status('Kayıtlı filtreler uygulandı.')}catch{status('Kayıtlı filtre okunamadı.')}};
 $('clear').onclick=()=>{for(const k of ['search','from','to'])$(k).value='';$('state').value='all';$('archive').value='active';$('person').value='';apply()};
 $('prev').onclick=()=>{if(page>0){page--;render()}};$('next').onclick=()=>{if((page+1)*size<filtered.length){page++;render()}};
 $('pageSize').onchange=()=>{size=Number($('pageSize').value)||25;page=0;render()};
