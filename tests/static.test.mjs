@@ -9,7 +9,7 @@ test('Application and admin scripts parse',()=>{
 test('DOM IDs and navigation targets exist; removed modules absent',()=>{
  for(const [html,scripts] of [['index.html',['smoking.js','water.js','ford-pilot.js','cloud-auth.js','notifications.js']],['admin/index.html',['admin/admin.js']],['admin/users.html',['admin/users.js']],['admin/overview.html',['admin/overview.js']]]){
  const h=read(html),ids=[...h.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);assert.equal(new Set(ids).size,ids.length,html);
- for(const file of scripts){const s=read(file);for(const match of s.matchAll(/(?:\$\b?|(?:\bel|\bwd))\('([^']+)'\)/g)){if(match[1].startsWith('#'))continue;assert.ok(ids.includes(match[1]),file+' missing '+match[1])}}
+ for(const file of scripts){const s=read(file);for(const match of s.matchAll(/(?:\$|\bel|\bwd)\('([^']+)'\)/g)){if(match[1].startsWith('#'))continue;assert.ok(ids.includes(match[1]),file+' missing '+match[1])}}
  if(html==='index.html'){for(const m of h.matchAll(/data-tab="([^"]+)"/g))assert.ok(ids.includes('page-'+m[1]));assert.ok(!h.includes('Aktif Yaşam'));assert.ok(!h.includes('Uyku ve Dinlenme'))}
  }
 });
