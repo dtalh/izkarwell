@@ -32,8 +32,8 @@ create policy ford_pilot_read on public.ford_pilot_records for select to authent
  and (m.role in ('admin','reviewer') or created_by=auth.uid()))
 );
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
-values('ford-pilot-private','ford-pilot-private',false,512000,array['image/jpeg'])
-on conflict(id) do update set public=false,file_size_limit=512000,allowed_mime_types=array['image/jpeg'];
+values('ford-pilot-private','ford-pilot-private',false,10000000,array['image/jpeg'])
+on conflict(id) do update set public=false,file_size_limit=10000000,allowed_mime_types=array['image/jpeg'];
 drop policy if exists ford_pilot_upload on storage.objects;
 create policy ford_pilot_upload on storage.objects for insert to authenticated with check (
  bucket_id='ford-pilot-private' and exists(

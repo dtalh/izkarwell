@@ -28,7 +28,7 @@ GitHub Pages statik PWA; Supabase Auth, PostgreSQL, RLS, özel Storage, Edge Fun
 GitHub Pages: main / root. iPhone: Safari → Paylaş → Ana Ekrana Ekle. PC: HTTPS adresini aç. Yeni sürüm sonrası uygulamayı yeniden aç. Supabase SQL ve Edge Function güncellemeleri ayrıca yönetim panelinde uygulanır. VAPID private key ve servis anahtarlarını repoya koymayın.
 
 ## Ford Uygulamaları test pilotu
-İki bağımsız uygulama teyidi, TEST müşteri adı, teslim tarihi, fotoğraf, operatör/inceleyici/admin rolleri, taslak devamı ve fotoğraflı dışa aktarım. SQL kurulumu ve rol ataması olmadan görünmez. Gerçek müşteri verisi kullanılmaz. Fotoğraflar özel Storage alanına yüklenir. Otomatik bağımsız şifreli yedekleme ve geri yükleme henüz tamamlanmadı.
+İki bağımsız uygulama teyidi, TEST müşteri adı, teslim tarihi, fotoğraf, operatör/inceleyici/admin rolleri, taslak devamı ve fotoğraflı dışa aktarım. SQL kurulumu ve rol ataması olmadan görünmez. Gerçek müşteri verisi kullanılmaz. Fotoğraflar cihazda optimize edilir ve özel Storage alanına yüklenir (fotoğraf başına 10 MB sınırı). Otomatik bağımsız şifreli yedekleme ve geri yükleme henüz tamamlanmadı.
 
 ## Güvenlik
 Google girişi sağlık eşitlemesini kendiliğinden açmaz. İş ve kişisel sağlık verileri ayrı tutulur. Kurumsal kullanım öncesi şirket onayı, KVKK ve yurt dışı aktarımı değerlendirmesi, saklama/silme politikası, yetki ve geri yükleme testleri gereklidir. Yedekleri güvenli saklayın. Sağlık içeriği genel bilgilendirmedir.
