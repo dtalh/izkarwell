@@ -5,7 +5,7 @@ const el=id=>document.getElementById(id);
 const endpoint='https://dfexhuqdbcrjfhscmqjy.supabase.co/functions/v1/izkarwell-push';
 const key='sb_publishable_orpnUOVOCwqMmNjsE0LVXQ_mG97SiVM';
 const deviceKey='izkarwell.push.device.v1', ownerKey='izkarwell.push.owner.v1';
-let registration=null, publicKey=null, owner='', busy=false, generation=0;
+let registration=null, publicKey=null, owner='', busy=false, generation=0, preferencesReady=false;
 const status=t=>el('pushStatus').textContent=t;
 const supported=()=>window.isSecureContext&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 const localSupported=()=>window.isSecureContext&&'serviceWorker' in navigator&&'Notification' in window;
@@ -39,6 +39,7 @@ function explain(e){
 function buttons(connected=false){
  const has=!!current()?.id;
  el('pushEnable').disabled=busy||!has||!registration||!publicKey;
+ el('pushWaterFields').disabled=busy||!connected||!preferencesReady;
  el('pushRetry').disabled=busy;
  el('pushLocalTest').disabled=busy||!localSupported();
  el('pushTest').disabled=busy||!has||!connected;
@@ -49,13 +50,45 @@ function checkWorker(reg){
   if(!reg.active)return reject(Error('worker_not_ready'));
   const channel=new MessageChannel();
   const timer=setTimeout(()=>{channel.port1.close();reject(Error('worker_not_ready'))},6000);
-  channel.port1.onmessage=e=>{clearTimeout(timer);channel.port1.close();e.data==='izkarwell-push-v1.2.1'?resolve():reject(Error('worker_not_ready'))};
+  channel.port1.onmessage=e=>{clearTimeout(timer);channel.port1.close();e.data==='izkarwell-push-v1.3.0'?resolve():reject(Error('worker_not_ready'))};
   reg.active.postMessage('izkarwell-push-version',[channel.port2]);
  });
 }
+function formatMinute(v){return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')}
+function minuteValue(v){if(!/^\d{2}:\d{2}$/.test(v))return NaN;const [h,m]=v.split(':').map(Number);return h*60+m}
+function showPreferences(p){
+ el('pushWaterEnabled').checked=!!p.water_enabled;
+ el('pushWaterInterval').value=String(p.interval_minutes);
+ el('pushWaterStart').value=formatMinute(p.start_minute);
+ el('pushWaterEnd').value=formatMinute(p.end_minute);
+ const next=p.next_due_at?new Date(p.next_due_at).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul',dateStyle:'short',timeStyle:'short'}):'';
+ el('pushWaterStatus').textContent=p.water_enabled?'Hatırlatmalar açık. Sonraki planlanan saat: '+(next||'belirleniyor'):'Otomatik su hatırlatmaları kapalı.';
+}
+async function loadPreferences(s){
+ preferencesReady=false;el('pushWaterFields').disabled=true;
+ try{
+  const data=await api('water-preferences',{device_id:deviceId()},s);
+  if(current()?.id!==s.id)return;
+  if(!data.preferences?.enabled){el('pushWaterStatus').textContent='Cihaz kaydı bulunamadı. Bildirimleri yeniden etkinleştir.';return}
+  showPreferences(data.preferences);preferencesReady=true;
+ }catch(e){el('pushWaterStatus').textContent='Hatırlatma ayarları alınamadı. '+explain(e)}
+}
+async function saveWater(e){
+ e.preventDefault();const s=current();
+ if(busy||!preferencesReady||!s||localOwner()!==s.id)return;
+ const start=minuteValue(el('pushWaterStart').value),end=minuteValue(el('pushWaterEnd').value);
+ if(!Number.isInteger(start)||!Number.isInteger(end)||end<=start||end>1439||start<0){el('pushWaterStatus').textContent='Bitiş saati başlangıç saatinden sonra olmalı.';return}
+ busy=true;buttons();
+ try{
+  const data=await api('save-water-preferences',{device_id:deviceId(),water_enabled:el('pushWaterEnabled').checked,interval_minutes:Number(el('pushWaterInterval').value),start_minute:start,end_minute:end},s);
+  if(current()?.id!==s.id)return;
+  showPreferences(data.preferences);
+ }catch(e){el('pushWaterStatus').textContent='Ayarlar kaydedilemedi. '+explain(e)}
+ finally{busy=false;buttons(localOwner()===current()?.id)}
+}
 async function refresh(){
- if(busy)return;const seq=++generation;registration=null;publicKey=null;buttons();
- el('pushInfo').textContent='v1.2.1 · '+(standalone()?'Ana ekran uygulaması':'Tarayıcı')+' · '+(localSupported()?'İzin: '+Notification.permission:'Bildirim API yok')+' · '+(navigator.onLine?'Çevrimiçi':'Çevrimdışı');
+ if(busy)return;const seq=++generation;registration=null;publicKey=null;preferencesReady=false;buttons();
+ el('pushInfo').textContent='v1.3.0 · '+(standalone()?'Ana ekran uygulaması':'Tarayıcı')+' · '+(localSupported()?'İzin: '+Notification.permission:'Bildirim API yok')+' · '+(navigator.onLine?'Çevrimiçi':'Çevrimdışı');
  if(!supported()){status('Bu ortam bildirimleri desteklemiyor. iPhone’da izkarwell.’i Safari ile ana ekrana ekleyip simgesinden aç.');return}
  const s=current();
  if(!s){owner='';publicKey=null;status('Bildirimleri açmak için Google hesabınla giriş yap.');return}
@@ -70,6 +103,8 @@ async function refresh(){
   const sub=await reg.pushManager.getSubscription();
   if(seq!==generation||current()?.id!==s.id)return;
   const connected=!!sub&&localOwner()===s.id&&Notification.permission==='granted';
+  if(connected)await loadPreferences(s);
+  if(seq!==generation||current()?.id!==s.id)return;
   buttons(connected);
   status(connected?'Bu cihaz bildirimlere bağlı. Test bildirimi gönderebilirsin.':Notification.permission==='denied'?'Bildirim izni kapalı. Cihaz ayarlarından izin ver.':'Hazır. Bildirimleri etkinleştirerek bu cihazı bağla.');
  }catch(e){if(seq!==generation)return;registration=null;publicKey=null;buttons();status(e.message==='worker_not_ready'?'Yeni sürüm hazırlanıyor. Uygulamayı kapatıp yeniden aç.':explain(e))}
@@ -93,6 +128,7 @@ async function enable(){
   if(current()?.id!==s.id){await sub.unsubscribe().catch(()=>{});await api('disable',{device_id:deviceId()},s).catch(()=>{});throw Error('sign_in_required')}
   localStorage.setItem(ownerKey,s.id);
   status('Bildirimler etkin. Test bildirimi gönder.');
+  await loadPreferences(s);
  }catch(e){status(explain(e))}
  finally{busy=false;const sub=await reg.pushManager.getSubscription().catch(()=>null);buttons(!!sub&&localOwner()===current()?.id)}
 }
@@ -105,7 +141,7 @@ async function disconnect(s=current()){
   catch(e){if(!sub)throw e}
  }
  if(sub){const removed=await sub.unsubscribe();if(!removed&&await reg.pushManager.getSubscription())throw Error('unsubscribe_failed')}
- localStorage.removeItem(ownerKey);
+ localStorage.removeItem(ownerKey);preferencesReady=false;el('pushWaterStatus').textContent='Otomatik hatırlatmalar bu cihazda kapatıldı.';
 }
 window.izkarPushDisconnect=async()=>{
  if(busy)throw Error('notification_operation_busy');
@@ -136,7 +172,7 @@ async function localTest(){
   status('Cihaz testi oluşturuldu. Bildirim merkezini kontrol et. Bu test sunucuya bağlanmaz.');
  }catch(e){status(explain(e))}finally{busy=false;const sub=await registration?.pushManager.getSubscription().catch(()=>null);buttons(!!sub&&localOwner()===current()?.id)}
 }
-el('pushEnable').onclick=enable;el('pushDisable').onclick=disable;el('pushTest').onclick=test;el('pushRetry').onclick=refresh;el('pushLocalTest').onclick=localTest;
+el('pushWaterForm').onsubmit=saveWater;el('pushEnable').onclick=enable;el('pushDisable').onclick=disable;el('pushTest').onclick=test;el('pushRetry').onclick=refresh;el('pushLocalTest').onclick=localTest;
 window.addEventListener('izkarwell-auth',()=>{if(owner!==current()?.id||!publicKey)refresh()});
 navigator.serviceWorker?.addEventListener('controllerchange',refresh);
 window.addEventListener('online',refresh);
