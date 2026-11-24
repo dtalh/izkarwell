@@ -113,12 +113,14 @@ async function syncInner(){
  capture();m=readMeta(id);
  const merged=applyEvents(m.pending,applyEvents(remote)),bundle=inflate(merged);
  if(!validBundle(bundle))throw Error('Bulut kayıtları doğrulanamadı.');
- // Keep a recovery snapshot before replacing active local records.
- m.recovery=bundle;writeMeta(id,m);
- storeBundle(id,bundle);
- state=bundle.s;waterState=bundle.w;
+ // Avoid rewriting the UI while the user is editing unchanged data.
+ if(!equal(merged,localMap())){
+  m.recovery=bundle;writeMeta(id,m);
+  storeBundle(id,bundle);
+  state=bundle.s;waterState=bundle.w;
+  applyTheme();renderDays();render(true);renderWater();
+ }
  m.base=merged;m.last=Date.now();delete m.recovery;writeMeta(id,m);
- applyTheme();renderDays();render(true);renderWater();
  status(m.pending.length?'Yeni kayıtlar eşitleme bekliyor.':'Son eşitleme: '+new Date(m.last).toLocaleString('tr-TR'));
 }
 async function sync(){
