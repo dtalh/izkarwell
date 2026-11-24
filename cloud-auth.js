@@ -133,8 +133,9 @@ async function sync(){
  }catch{status('Eşitleme tamamlanamadı. Yerel kayıtlar ve bekleyen işlemler korunuyor. Tekrar dene.')}
  finally{busy=false;el('cloudSyncNow').disabled=false}
 }
+window.izkarPushSession=()=>session?.user?.id&&session.access_token?{id:session.user.id,token:session.access_token}:null;
 function onSession(s){
- session=s;ui();
+ session=s;ui();window.dispatchEvent(new Event('izkarwell-auth'));
  const id=s?.user?.id;
  if(active&&id&&id!==active){switchLocal('');return}
  if(!id){
@@ -158,7 +159,7 @@ async function logout(){
  if(busy||authBusy)return;
  if(active&&!confirm('Hesaptan çıkınca kişisel bulut görünümü kapanır. Cihazdaki ayrı hesap kayıtları ve bekleyen eşitleme işlemleri korunur.'))return;
  authBusy=true;
- try{if(active)capture();const {error}=await client.auth.signOut({scope:'local'});if(error)throw error;switchLocal('')}
+ try{if(active)capture();if(window.izkarPushDisconnect)await window.izkarPushDisconnect();const {error}=await client.auth.signOut({scope:'local'});if(error)throw error;switchLocal('')}
  catch{status('Çıkış tamamlanamadı. Tekrar dene.')}
  finally{authBusy=false}
 }
