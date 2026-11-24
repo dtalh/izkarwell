@@ -1,6 +1,6 @@
 // izkarwell. Web Push pilot: authenticated device registration and test only.
 // No health records are read or transferred. Scheduling is a separate step.
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "npm:@supabase/supabase-js@2.117.1";
 import webpush from "npm:web-push@3.6.7";
 
 const origin = "https://dtalh.github.io";
@@ -41,14 +41,36 @@ Deno.serve(async (req) => {
   if (!token) return reply(401, { error: "sign_in_required" });
   try {
     const url = Deno.env.get("SUPABASE_URL");
-    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const pub = Deno.env.get("VAPID_PUBLIC_KEY");
-    const priv = Deno.env.get("VAPID_PRIVATE_KEY");
-    if (!url || !service || !pub || !priv || pub.length !== 87 || priv.length !== 43) {
+    // Prefer current named API keys; retain legacy fallback for existing projects.
+    let modern: string | undefined;
+    try {
+      const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}");
+      if (typeof keys.default === "string" && keys.default.startsWith("sb_secret_")) modern = keys.default;
+    } catch { /* Legacy fallback below. */ }
+    const service = modern || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+    const pub = Deno.env.get("VAPID_PUBLIC_KEY")?.trim();
+    const priv = Deno.env.get("VAPID_PRIVATE_KEY")?.trim();
+    const checks = {
+      supabase_url: !!url,
+      server_key: !!service,
+      vapid_public_format: !!pub && pub.length === 87 && b64.test(pub),
+      vapid_private_format: !!priv && priv.length === 43 && b64.test(priv),
+    };
+    if (!url || !service || !pub || !priv || !Object.values(checks).every(Boolean)) {
+      // Only names, booleans and lengths. Never print keys, JWTs or endpoints.
+      console.warn("izkarwell push configuration", JSON.stringify({
+        ...checks, public_length: pub?.length ?? 0, private_length: priv?.length ?? 0
+      }));
       return reply(503, { error: "server_not_configured" });
     }
     const db = createClient(url, service, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { fetch: (input, init) => {
+        const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+        // A modern secret belongs on apikey, not on Authorization as a fake JWT.
+        if (modern && headers.get("authorization") === "Bearer " + service) headers.delete("authorization");
+        return fetch(input, { ...init, headers });
+      } }
     });
     const { data: { user }, error: authError } = await db.auth.getUser(token);
     if (authError || !user || user.is_anonymous) return reply(401, { error: "sign_in_required" });
