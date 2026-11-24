@@ -1,5 +1,12 @@
 # Sürüm notları
 
+## Yönetim portalı v1.1 — Excel raporu ve fotoğraf indirme
+- Kayıt oluşturan üyenin mevcut hesap adı ve e-postası; eski kayıtlar da created_by üzerinden eşleştirilir.
+- Yalnızca Ford pilot reviewer/admin ve görünür kayıtlarla sınırlı kimlik sorgusu.
+- Filtrelenmiş kayıtların XLSX raporu: Kayıtlar ve Özet sayfaları; ön izleme ve ayrı indirme düğmesi.
+- Her fotoğraf için doğrudan JPEG indir ve fotoğraf ön izlemesinde indirme düğmesi.
+- `20261124_ford_report.sql` kurulumu gerekir. Fotoğraflar Excel içine gömülmez. Gerçek Excel ve erişim testi bekliyor.
+
 ## Ford pilot — masaüstü yönetim portalı
 - Ayrı `/admin/` arayüzü, ortak Google oturumu, reviewer/admin erişimi.
 - Türkçe isim arama, teslim tarihi ve kurulum durumu filtreleri, sayfalama ve filtreli CSV.
