@@ -1,5 +1,12 @@
 # Sürüm notları
 
+## Ford pilot — masaüstü yönetim portalı
+- Ayrı `/admin/` arayüzü, ortak Google oturumu, reviewer/admin erişimi.
+- Türkçe isim arama, teslim tarihi ve kurulum durumu filtreleri, sayfalama ve filtreli CSV.
+- Tamamlanmış kayıtlar üzerinden oranlar ve özel fotoğraf görüntüleme.
+- Admin için mobilde ve portalda geri alınabilir silme, çöp kutusu ve sunucu işlem kaydı.
+- Yeni SQL kurulumu ve canlı yetki/işlem testleri gerekir. Kalıcı silme yok; mevcut yükleme algoritması korunur.
+
 ## Ford Uygulamaları — test pilotu (1.3 sonrası)
 - Ford Hesabım ve Ford Uygulaması ayrı teyit, TEST müşteri adı, teslim tarihi.
 - I-Deal e-posta eşleşmesi bilgilendirmesi.
