@@ -12,7 +12,7 @@ async function rpc(name,data={},id=session?.user?.id){
 }
 function reset(){for(const k of ['module','role','saveRole','closeEdit'])$(k).disabled=false;allowed=false;selected=null;modules=[];users=[];offset=0;query='';loading=false;saving=false;$('search').value='';$('workspace').hidden=true;$('users').replaceChildren();$('history').replaceChildren();$('identity').textContent='';$('editUser').textContent='';$('module').replaceChildren();if(dialog.open)dialog.close()}
 async function auth(s){
- const n=++epoch;session=s;reset();$('login').hidden=!!s;if(!s){status('Önce çalışan uygulamasından giriş yap.');return}
+ const n=++epoch;session=s;reset();$('signOut').hidden=!s;$('login').hidden=!!s;if(!s){status('Önce çalışan uygulamasından giriş yap.');return}
  try{const ok=await rpc('platform_is_admin');if(n!==epoch)return;if(ok!==true){status('Bu ekran yalnızca genel sistem yöneticisine açıktır.');return}
  const list=await rpc('platform_list_modules');if(n!==epoch)return;modules=list;allowed=true;$('identity').textContent=(s.user.email||'')+' · Genel sistem yöneticisi';$('workspace').hidden=false;await load(n);await history(n)
  }catch(e){if(n===epoch){reset();status('Yetki doğrulanamadı. Kullanıcı yönetimi SQL kurulumunu kontrol et. '+e.message)}}
@@ -44,6 +44,7 @@ $('searchForm').onsubmit=e=>{e.preventDefault();if(!loading&&!saving){query=$('s
 $('clear').onclick=()=>{if(!loading&&!saving){$('search').value='';query='';offset=0;load()}};
 $('reload').onclick=()=>load();$('prev').onclick=()=>{if(!loading&&!saving&&offset>0){offset=Math.max(0,offset-50);load()}};$('next').onclick=()=>{if(!loading&&!saving&&users.length===50){offset+=50;load()}};
 $('historyReload').onclick=()=>history();$('closeEdit').onclick=()=>{if(!saving)dialog.close()};dialog.addEventListener('cancel',e=>{if(saving)e.preventDefault()});dialog.addEventListener('close',()=>{selected=null;$('editUser').textContent='';$('editStatus').textContent=''});
+$('signOut').onclick=async()=>{if(saving||!confirm('Oturumu kapatmak istiyor musun?'))return;const {error}=await client.auth.signOut({scope:'local'});if(error)status('Çıkış tamamlanamadı.');else await auth(null)};
 async function start(){try{client=window.supabase.createClient(base,key,{auth:{flowType:'pkce',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'izkarwell.auth.v1'}});client.auth.onAuthStateChange((event,s)=>{setTimeout(()=>{if(event==='TOKEN_REFRESHED'&&s?.user?.id&&s.user.id===session?.user?.id){session=s;return}auth(s)},0)});const {data,error}=await client.auth.getSession();if(error)throw error;await auth(data.session)}catch(e){status('Oturum başlatılamadı.');$('login').hidden=false}}
 start();
 })();
