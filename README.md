@@ -41,3 +41,6 @@ Yönetim paneli, toplu bildirim, modül bazlı roller, ortak fotoğraf/dosya alt
 
 ## Test durumu
 Kullanıcı Google giriş/eşitleme, iPhone ve PC test bildirimleri ve otomatik su hatırlatmalarının çalıştığını bildirdi. Ford pilotu için uçtan uca Supabase, cihaz, erişim ve geri yükleme testleri bekliyor.
+
+## Kullanıcı ve Yetki Yönetimi (Admin v1.2)
+`admin/users.html`: yalnızca açıkça tanımlanmış genel sistem yöneticileri için kullanıcı arama, modül rolü atama/kaldırma ve son 100 işlem geçmişi. `20261124_platform_users.sql` kurulumu ve SQL Editor üzerinden ilk genel yönetici UID ataması gerekir. Modül yöneticiliği genel yönetici yetkisi vermez. Yeni modüller kayıt defterine eklenebilir; modülün kendi RLS kuralları ayrıca gerekir. Yetki kaldırma kayıtları/fotoğrafları silmez. Sağlık verileri sorgulanmaz. Canlı rol ve yetkisiz erişim testi bekliyor.
