@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id),base='https://dfexhuqdbcrjfhscmqjy.supab
 let client,session=null,role='',records=[],filtered=[],page=0,busy=false,epoch=0,url='',photoEpoch=0,photoName='',creatorReady=false,reportSnapshot=null;const size=25;
 const status=s=>$('status').textContent=s;
 function clearPhoto(){$('downloadPhoto').disabled=true;photoName='';photoEpoch++;if(url)URL.revokeObjectURL(url);url='';$('photoImage').removeAttribute('src');$('photoImage').hidden=true}
-function reset(){reportSnapshot=null;creatorReady=false;if($('reportDialog').open)$('reportDialog').close();records=[];filtered=[];page=0;role='';$('workspace').hidden=true;$('records').replaceChildren();$('identity').textContent='';clearPhoto();if($('photoDialog').open)$('photoDialog').close()}
+function reset(){$('userAdminLink').hidden=true;reportSnapshot=null;creatorReady=false;if($('reportDialog').open)$('reportDialog').close();records=[];filtered=[];page=0;role='';$('workspace').hidden=true;$('records').replaceChildren();$('identity').textContent='';clearPhoto();if($('photoDialog').open)$('photoDialog').close()}
 async function req(path,options={},id=session?.user?.id){
  const s=session;if(!id||s?.user?.id!==id||!s.access_token)throw Error('Oturum yok.');
  const r=await fetch(base+path,{...options,headers:{apikey:key,Authorization:'Bearer '+s.access_token,...options.headers},cache:'no-store',credentials:'omit',redirect:'error',signal:AbortSignal.timeout(30000)});
@@ -14,8 +14,9 @@ async function auth(s){
  const n=++epoch;session=s;reset();$('login').hidden=!!s;
  if(!s){status('Çalışan uygulamasında Google ile giriş yapıp tekrar buraya dön.');return}
  const id=s.user.id;
+ try{const isAdmin=await (await req('/rest/v1/rpc/platform_is_admin',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'},id)).json();if(n!==epoch)return;$('userAdminLink').hidden=isAdmin!==true}catch{if(n!==epoch)return}
  try{const rs=await (await req('/rest/v1/work_module_members?select=role&module_key=eq.ford-pilot&user_id=eq.'+encodeURIComponent(id),{},id)).json();if(n!==epoch)return;
- role=rs[0]?.role||'';if(!['reviewer','admin'].includes(role)){status('Bu yönetim portalı için yetkin yok.');return}
+ role=rs[0]?.role||'';if(!['reviewer','admin'].includes(role)){status($('userAdminLink').hidden?'Bu yönetim portalı için yetkin yok.':'Ford kayıtlarına erişim yetkin yok. Kullanıcı Yönetimi menüsünü kullanabilirsin.');return}
  $('identity').textContent=(s.user.email||'')+' · '+(role==='admin'?'Modül yöneticisi':'İnceleyici');$('archiveLabel').hidden=role!=='admin';$('archive').value='active';$('workspace').hidden=false;await load(n)
  }catch(e){if(n===epoch){reset();status('Erişim kontrolü başarısız. '+e.message)}}
 }
