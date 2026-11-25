@@ -31,3 +31,9 @@ Mevcut fotoğrafın üzerine yazılmaz; fotoğraf değiştirme için ayrı sür�
 - GitHub Actions ikinci çalışma [45419974065](https://github.com/dtalh/izkarwell/actions/runs/45419974065): 3/3 statik, 5/6 tarayıcı testi başarılı. Mobil WebKit kayıt düzenleme senaryosu, sahte Storage yanıtında `route.fulfill: body: expected string, got object` hatasıyla başarısız. Fotoğraf yükleme ve mükerrer devam adımları geçmiş olsa da düzenleme doğrulanmadı.
 - Kullanıcı bu bilinen sorunla mevcut test ortamına pilot yayın yapılmasını onayladı. Gerçek müşteri verisi yasak; kurumsal üretim onayı değildir.
 - Sonraki adım: test fixture binary yanıtını düzelt, mevcut fotoğrafı koruyarak düzenleme ve mükerrer uyarısında vazgeçme senaryosunu tekrar çalıştır. Gerçek iPhone ve Supabase yetki testleri ayrıca gerekli.
+
+## v2.1 hazırlık kararı — 25.11.2026
+- Kullanıcı gerçek kayıt girişinin şirket ve güvenlik onayları tamamlanana kadar kapalı tutulmasını açıkça onayladı. Gerçek kullanım açma işlemi ayrı onay gerektirir.
+- v2.0 kaynak geri dönüşü: `backup/pre-v2.1-2026-11-25`, commit `6c2fd1952e7d568b6eba4edac1e6466c792d7708`. Canlı DB/Storage yedeği değildir.
+- Kullanıcı ve Yetki Yönetimi masaüstü portalında mevcut; genel yönetici ataması SQL ile. Telefona özel yönetim ekranı ayrı değerlendirilir.
+- WebKit fixture Buffer düzeltmesi ve kapalı giriş/iptal/rapor ayrımı/yetki kaldırma sentetik testleri hazırlandı; başarılı CI sonucu ve canlı RLS doğrulaması olmadan test sorunu kapanmış sayılmaz.
