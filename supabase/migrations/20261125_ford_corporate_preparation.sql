@@ -111,7 +111,7 @@ returns boolean language sql stable security definer set search_path='' as $$
  on m.user_id=auth.uid() and m.module_key='ford-pilot'
  where (m.role='admin' or (r.archived_at is null and (m.role='reviewer' or r.created_by=auth.uid())))
  and (p_name=r.id::text||'/account.jpg' or p_name=r.id::text||'/ford.jpg'))
-$;
+$$;
 drop policy if exists ford_corporate_read_gate on storage.objects;
 create policy ford_corporate_read_gate on storage.objects as restrictive for select to authenticated
 using (bucket_id<>'ford-pilot-private' or public.ford_corporate_can_read(name));
