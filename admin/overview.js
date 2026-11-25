@@ -32,7 +32,7 @@ async function auth(s){
   if(admin){$('userMetric').hidden=false;try{let count=0;for(let offset=0;offset<=10000;offset+=50){const page=await rpc('platform_list_users',{p_search:'',p_offset:offset});count+=page.length;if(page.length<50){if(n===epoch)$('memberCount').textContent=count;break}}}catch{}}
   if(n!==epoch)return;
   if(ford){
-   let ready=false;try{const g=await rpc('ford_corporate_status');if(n!==epoch)return;ready=true;$('corporateGate').textContent=g.real_entry_enabled?'Gerçek kayıt girişi açık.':'Gerçek müşteri kaydı girişi kapalı.'}catch{}if(n!==epoch)return;
+   let ready=false;try{const g=await rpc('ford_corporate_status');if(n!==epoch)return;ready=true;$('corporateGate').textContent=g.real_entry_enabled?'Gerçek kayıt girişi açık.':'Gerçek müşteri kaydı girişi kapalı.'}catch(e){if(n===epoch)$('corporateGate').textContent='Sunucu durumu doğrulanamadı. v2.1 SQL kurulumunu kontrol et.';throw e}if(n!==epoch)return;
    $('fordMetric').hidden=false;$('incompleteMetric').hidden=false;$('fordSection').hidden=false;
    const now=monthKey(new Date()),[y,m]=now.split('-').map(Number),months=Array.from({length:6},(_,i)=>new Date(Date.UTC(y,m-6+i,1)).toISOString().slice(0,7));
    const rows=[];if(ready)for(let offset=0;offset<=10000;offset+=250){const q=new URLSearchParams({select:'delivery_date,status,account_done,ford_done',archived_at:'is.null',is_test:'eq.false',delivery_date:'gte.'+months[0]+'-01',order:'id.asc',limit:'250',offset:String(offset)});const batch=await req('/rest/v1/ford_pilot_records?'+q,{},id);if(n!==epoch)return;rows.push(...batch);if(batch.length<250)break;if(offset===10000)throw Error('Gösterge için kayıt sınırı aşıldı.')}
