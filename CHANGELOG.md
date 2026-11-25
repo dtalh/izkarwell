@@ -77,3 +77,7 @@
 - Dumansız Yaşam, sağlık zaman çizelgesi, tasarruf, kriz sayacı ve ödül.
 - Su Tüketimi, hedef ve haftalık görünüm.
 - Yerel saklama, JSON yedek ve cihaz aktarımı, mobil/masaüstü arayüz.
+
+
+### v2.1 Mobil yönetim erişimi
+Profilde kullanıcı yönetimi bağlantısı yalnızca sunucudan `platform_is_admin === true` doğrulanan hesaplara açılır. Telefonlarda kullanıcılar ve rol geçmişi kart düzeninde, rol seçimi dokunmatik kontrollerle gösterilir. Oturum değişiminde eski yanıtlar reddedilir; odak/sekme dönüşünde yetki yeniden doğrulanır; 401/403 yanıtında ekran temizlenir. Rol kaydetmeden önce yönetici yetkisi yeniden kontrol edilir; her işlem sunucu yetkilendirmesine tabidir. Sentetik tarayıcı testleri gerçek servisleri taklit eder. Gerçek müşteri girişi kapalı kalır; Supabase kurulumu ve fiziksel cihaz doğrulaması ayrıca bekler.

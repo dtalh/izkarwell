@@ -56,3 +56,9 @@ Kullanıcı Google giriş/eşitleme, iPhone ve PC test bildirimleri ve otomatik 
 
 ## Kullanıcı ve Yetki Yönetimi (Admin v1.2)
 `admin/users.html`: yalnızca açıkça tanımlanmış genel sistem yöneticileri için kullanıcı arama, modül rolü atama/kaldırma ve son 100 işlem geçmişi. `20261124_platform_users.sql` kurulumu ve SQL Editor üzerinden ilk genel yönetici UID ataması gerekir. Modül yöneticiliği genel yönetici yetkisi vermez. Yeni modüller kayıt defterine eklenebilir; modülün kendi RLS kuralları ayrıca gerekir. Yetki kaldırma kayıtları/fotoğrafları silmez. Sağlık verileri sorgulanmaz. Canlı rol ve yetkisiz erişim testi bekliyor.
+
+
+### v2.1 Mobil yönetim erişimi
+Profilde kullanıcı yönetimi bağlantısı yalnızca sunucudan `platform_is_admin === true` doğrulanan hesaplara açılır. Telefonlarda kullanıcılar ve rol geçmişi kart düzeninde, rol seçimi dokunmatik kontrollerle gösterilir. Oturum değişiminde eski yanıtlar reddedilir; odak/sekme dönüşünde yetki yeniden doğrulanır; 401/403 yanıtında ekran temizlenir. Rol kaydetmeden önce yönetici yetkisi yeniden kontrol edilir; her işlem sunucu yetkilendirmesine tabidir. Sentetik tarayıcı testleri gerçek servisleri taklit eder. Gerçek müşteri girişi kapalı kalır; Supabase kurulumu ve fiziksel cihaz doğrulaması ayrıca bekler.
+
+Doğrulama: `node --test tests/static.test.mjs` ve `npx playwright test`. Yerel sonuç: 3 statik kontrol geçti; Chromium ve iPhone 13 WebKit üzerinde mevcut 10 regresyon senaryosu ve 12 mobil yönetim senaryosu geçti. Testlerde tüm dış servis istekleri taklit edilir veya engellenir; gerçek Supabase/RLS ve fiziksel cihaz kabul testi yapılmadı.

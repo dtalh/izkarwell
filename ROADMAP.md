@@ -37,3 +37,7 @@ Mevcut fotoğrafın üzerine yazılmaz; fotoğraf değiştirme için ayrı sür�
 - v2.0 kaynak geri dönüşü: `backup/pre-v2.1-2026-11-25`, commit `6c2fd1952e7d568b6eba4edac1e6466c792d7708`. Canlı DB/Storage yedeği değildir.
 - Kullanıcı ve Yetki Yönetimi masaüstü portalında mevcut; genel yönetici ataması SQL ile. Telefona özel yönetim ekranı ayrı değerlendirilir.
 - WebKit fixture Buffer düzeltmesi ve kapalı giriş/iptal/rapor ayrımı/yetki kaldırma sentetik testleri hazırlandı; başarılı CI sonucu ve canlı RLS doğrulaması olmadan test sorunu kapanmış sayılmaz.
+
+
+### v2.1 Mobil yönetim erişimi
+Profilde kullanıcı yönetimi bağlantısı yalnızca sunucudan `platform_is_admin === true` doğrulanan hesaplara açılır. Telefonlarda kullanıcılar ve rol geçmişi kart düzeninde, rol seçimi dokunmatik kontrollerle gösterilir. Oturum değişiminde eski yanıtlar reddedilir; odak/sekme dönüşünde yetki yeniden doğrulanır; 401/403 yanıtında ekran temizlenir. Rol kaydetmeden önce yönetici yetkisi yeniden kontrol edilir; her işlem sunucu yetkilendirmesine tabidir. Sentetik tarayıcı testleri gerçek servisleri taklit eder. Gerçek müşteri girişi kapalı kalır; Supabase kurulumu ve fiziksel cihaz doğrulaması ayrıca bekler.

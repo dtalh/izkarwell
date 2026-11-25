@@ -17,4 +17,4 @@ select public, file_size_limit from storage.buckets where id='ford-pilot-private
 7. Ayrı kurumsal aktivasyon kararı: şirket onayı, veri sorumlusu/hukuki dayanak ve aydınlatma, yurtdışı aktarımı, saklama/imha, şirket hesap sahipliği/hosting, yönetici güvenliği ve MFA, dosya içerik doğrulaması, bağımsız şifreli veritabanı + Storage yedeği ve geri yükleme testi, cihaz/izin testleri. Bu maddeler bu PR ile tamamlanmış değildir.
 8. Geri dönüş: eski v2.0 kaynakları yeni commit ile yayınla; migration'ı tersine çevirmek için tablo/kolon veya kayıt silme. Giriş kapalı kalsın. Eğer gelecekte gerçek kayıtlar oluşturulduysa v2.0 raporları bunları testten ayırmaz; o durumda eski arayüze dönmek yerine uyumlu düzeltme gerekir.
 
-Kullanıcı yönetimi: admin/users.html genel sistem yöneticilerine açık; modül yetkisi ver/kaldır ve geçmiş. Genel sistem yöneticisi ataması ayrı SQL işlemi; bu PR mobil yönetim ekranı eklemez.
+Kullanıcı yönetimi: admin/users.html genel sistem yöneticilerine açık; modül yetkisi ver/kaldır ve geçmiş. Genel sistem yöneticisi ataması ayrı SQL işlemi; mobil yönetim erişimi profil bağlantısı ve telefon dostu kullanıcı/rol geçmişi görünümüyle dahildir.
