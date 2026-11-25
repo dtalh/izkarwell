@@ -24,7 +24,7 @@ async function load(n=epoch){
  if(!role)return;const id=session.user.id;busy=true;$('reload').disabled=true;$('export').disabled=true;$('report').disabled=true;$('zip').disabled=true;creatorReady=false;status('Kayıtlar yükleniyor…');
  try{
  corporateReady=false;realEnabled=false;
- try{const g=await (await rpc('ford_corporate_status',{})).json();if(n!==epoch)return;corporateReady=true;realEnabled=g.real_entry_enabled===true;role=g.role;if(!['admin','reviewer'].includes(role))throw Error('Yetki kaldırıldı.')}catch(e){if(e.message.includes('HTTP 401')||e.message.includes('HTTP 403')||!['admin','reviewer'].includes(role))throw e}
+ try{const g=await (await rpc('ford_corporate_status',{})).json();if(n!==epoch)return;corporateReady=true;realEnabled=g.real_entry_enabled===true;role=g.role;if(!['admin','reviewer'].includes(role))throw Error('Yetki kaldırıldı.')}catch(e){corporateReady=false;realEnabled=false;throw e}
  $('corporateGate').textContent=realEnabled?'Gerçek kayıt girişi açık. Müşteri verilerini yalnızca yetkili iş amacıyla kullan.':'Gerçek müşteri kaydı girişi kapalı. Test kayıtları ayrı görünümde bulunur.';
  let all=[],offset=0;const fields='id,customer_name,delivery_date,account_done,ford_done,status,created_at,created_by,archived_at';enhanced=true;while(true){
  const q=new URLSearchParams({select:fields+(enhanced?',incomplete_note,revision':'')+(corporateReady?',is_test':''),order:'created_at.desc,id.desc',limit:'250',offset:String(offset)});
@@ -43,7 +43,7 @@ async function load(n=epoch){
   creatorReady=all.every(r=>!!r.creator);
  }catch(e){creatorError=true}
  if(n!==epoch)return;records=all;populatePeople();apply();status(creatorError||!creatorReady?'Kayıtlar yüklendi; üye bilgisi için yeni rapor SQL kurulumunu kontrol et.':'Kayıtlar güncel.')
- }catch(e){if(n===epoch){records=[];creatorReady=false;apply();clearPhoto();if($('reportDialog').open)$('reportDialog').close();status(e.message+' SQL güncellemesini kontrol et.')}}finally{if(n===epoch){busy=false;$('reload').disabled=false;$('export').disabled=!creatorReady;$('report').disabled=!creatorReady;$('zip').disabled=false}}
+ }catch(e){if(n===epoch){records=[];creatorReady=false;corporateReady=false;realEnabled=false;apply();clearPhoto();if($('reportDialog').open)$('reportDialog').close();status(e.message+' SQL güncellemesini kontrol et.')}}finally{if(n===epoch){busy=false;$('reload').disabled=false;$('export').disabled=!creatorReady;$('report').disabled=!creatorReady;$('zip').disabled=!corporateReady}}
 }
 function populatePeople(){
  const el=$('person'),old=el.value;el.replaceChildren(new Option('Tümü',''));
@@ -144,6 +144,7 @@ $('zip').onclick=async()=>{
  if(items.length>200){status('Bir ZIP en fazla 200 fotoğraf içerir. Tarih veya personel filtresini daralt.');return}
  if(!confirm(items.length+' fotoğraf ZIP olarak indirilsin mi? Dosyayı güvenli sakla.'))return;
  busy=true;$('zip').disabled=true;try{
+  await checkExport([...new Set(items.map(([r])=>r.id))]);if(n!==epoch)return;
   const files=[];let total=0;
   for(const [r,kind] of items){const b=await (await req('/storage/v1/object/authenticated/ford-pilot-private/'+r.id+'/'+kind+'.jpg',{},id)).arrayBuffer();if(n!==epoch)return;total+=b.byteLength;if(total>200000000)throw Error('ZIP 200 MB sınırını aştı. Filtreyi daralt.');files.push([r.id+'/'+filename(r,kind),new Uint8Array(b)]);status('Fotoğraflar hazırlanıyor: '+files.length+'/'+items.length)}
   if(n!==epoch)return;await checkExport([...new Set(items.map(([r])=>r.id))]);if(n!==epoch)return;saveBlob(window.izkarFordZip(files),'izkarwell-ford-fotograflar.zip');status('ZIP indirme işlemi başlatıldı.')
