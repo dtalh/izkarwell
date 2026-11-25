@@ -1,5 +1,8 @@
 # Sürüm notları
 
+### v2.1 SQL kurulum düzeltmesi
+- Fotoğraf okuma fonksiyonunun PostgreSQL dollar-quote işaretleri düzeltildi; authenticated rolüne gerekli EXECUTE yetkisi verildi. Gerçek müşteri girişi kapalı kalır. SQL delimiter ve yetki kontrolleri regresyon testine eklendi.
+
 ## v2.1 — Kurumsal Pilot hazırlığı (gerçek giriş kapalı)
 - Gerçek ve test kayıtları için değiştirilemeyen sunucu sınıflandırması, varsayılan kapalı gerçek giriş kontrolü ve özel Storage erişim kapıları.
 - Gerçek kayıtlar varsayılan rapor kapsamı, ayrı test filtresi, veri minimizasyonu bilgilendirmeleri.
