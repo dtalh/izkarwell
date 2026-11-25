@@ -106,12 +106,12 @@ create policy ford_corporate_upload_gate on storage.objects as restrictive for i
 with check (bucket_id<>'ford-pilot-private' or public.ford_corporate_can_upload(name));
 -- Enforce record-level photo access even if an additional permissive policy exists.
 create or replace function public.ford_corporate_can_read(p_name text)
-returns boolean language sql stable security definer set search_path='' as $
+returns boolean language sql stable security definer set search_path='' as $$
  select exists(select 1 from public.ford_pilot_records r join public.work_module_members m
  on m.user_id=auth.uid() and m.module_key='ford-pilot'
  where (m.role='admin' or (r.archived_at is null and (m.role='reviewer' or r.created_by=auth.uid())))
  and (p_name=r.id::text||'/account.jpg' or p_name=r.id::text||'/ford.jpg'))
-$;
+$$;
 drop policy if exists ford_corporate_read_gate on storage.objects;
 create policy ford_corporate_read_gate on storage.objects as restrictive for select to authenticated
 using (bucket_id<>'ford-pilot-private' or public.ford_corporate_can_read(name));
@@ -130,6 +130,6 @@ begin
   select 1 from public.ford_pilot_records r where r.id=x.id and (v_role='admin' or r.archived_at is null)));
 end $$;
 revoke all on function public.ford_corporate_is_test(text),public.ford_corporate_enabled(),public.ford_corporate_status(),public.ford_corporate_record_guard(),public.ford_corporate_can_upload(text),public.ford_corporate_can_read(text),public.ford_corporate_check_export(uuid[]) from public,anon,authenticated;
-grant execute on function public.ford_corporate_status(),public.ford_corporate_can_upload(text),public.ford_corporate_check_export(uuid[]) to authenticated;
+grant execute on function public.ford_corporate_status(),public.ford_corporate_can_upload(text),public.ford_corporate_can_read(text),public.ford_corporate_check_export(uuid[]) to authenticated;
 -- Original RPC grants are retained by CREATE OR REPLACE.
 commit;
