@@ -1,5 +1,12 @@
 # Sürüm notları
 
+## v2.1 — Kurumsal Pilot hazırlığı (gerçek giriş kapalı)
+- Gerçek ve test kayıtları için değiştirilemeyen sunucu sınıflandırması, varsayılan kapalı gerçek giriş kontrolü ve özel Storage erişim kapıları.
+- Gerçek kayıtlar varsayılan rapor kapsamı, ayrı test filtresi, veri minimizasyonu bilgilendirmeleri.
+- Rapor ve fotoğraf dışa aktarımı öncesi güncel sunucu yetki kontrolü; mevcut kullanıcı yönetimi korunur.
+- WebKit test fixture için binary Buffer dönüşümü; kapalı giriş, mükerrer vazgeçme, ayrılmış rapor ve yetki kaldırma testleri eklendi. CI ve gerçek sunucu doğrulaması beklenir.
+- Yedek dalı `backup/pre-v2.1-2026-11-25`. Gerçek müşteri girişinin açılması bu sürümün kapsamında değildir.
+
 ## v2.0 — Super App Foundation (test pilotu)
 - İş ve Yaşam ana ekranı, yetki bazlı İş Merkezi, hızlı teyit/kayıt butonları, ayrı bildirim sekmesi; Aktif Yaşam ve Uyku kaldırıldı.
 - Yönetim Genel Bakış, gerçek aylık göstergeler, ortak navigasyon, açık/koyu tema, çıkış, kayıtlı filtreler ve sayfa boyutu.
@@ -70,3 +77,7 @@
 - Dumansız Yaşam, sağlık zaman çizelgesi, tasarruf, kriz sayacı ve ödül.
 - Su Tüketimi, hedef ve haftalık görünüm.
 - Yerel saklama, JSON yedek ve cihaz aktarımı, mobil/masaüstü arayüz.
+
+
+### v2.1 Mobil yönetim erişimi
+Profilde kullanıcı yönetimi bağlantısı yalnızca sunucudan `platform_is_admin === true` doğrulanan hesaplara açılır. Telefonlarda kullanıcılar ve rol geçmişi kart düzeninde, rol seçimi dokunmatik kontrollerle gösterilir. Oturum değişiminde eski yanıtlar reddedilir; odak/sekme dönüşünde yetki yeniden doğrulanır; 401/403 yanıtında ekran temizlenir. Rol kaydetmeden önce yönetici yetkisi yeniden kontrol edilir; her işlem sunucu yetkilendirmesine tabidir. Sentetik tarayıcı testleri gerçek servisleri taklit eder. Gerçek müşteri girişi kapalı kalır; Supabase kurulumu ve fiziksel cihaz doğrulaması ayrıca bekler.

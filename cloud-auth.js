@@ -10,7 +10,13 @@ const metaKey=id=>'izkarwell.cloud-meta.v1.'+id;
 const readMeta=id=>JSON.parse(localStorage.getItem(metaKey(id))||'null');
 const writeMeta=(id,m)=>localStorage.setItem(metaKey(id),JSON.stringify(m));
 const localMap=()=>flatten(state,waterState);
-let client,session=null,busy=false,authBusy=false,ready=false;
+let client,session=null,busy=false,authBusy=false,ready=false,adminEpoch=0;
+async function checkAdmin(){
+ const n=++adminEpoch,s=session,panel=el('platformAdminPanel');panel.hidden=true;
+ if(!s?.user?.id||!s.access_token||document.hidden)return;
+ try{const r=await fetch(endpoint+'/rest/v1/rpc/platform_is_admin',{method:'POST',headers:{apikey:publicKey,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json'},body:'{}',cache:'no-store',credentials:'omit',redirect:'error',signal:AbortSignal.timeout(15000)});const ok=r.ok&&await r.json()===true;if(n===adminEpoch&&session===s)panel.hidden=!ok}catch{}
+}
+
 function status(s){el('cloudStatus').textContent=s}
 function ui(){
  const id=session?.user?.id;
@@ -135,7 +141,7 @@ async function sync(){
 }
 window.izkarPushSession=()=>session?.user?.id&&session.access_token?{id:session.user.id,token:session.access_token}:null;
 function onSession(s){
- session=s;ui();window.dispatchEvent(new Event('izkarwell-auth'));
+ session=s;ui();checkAdmin();window.dispatchEvent(new Event('izkarwell-auth'));
  const id=s?.user?.id;
  if(active&&id&&id!==active){switchLocal('');return}
  if(!id){
@@ -183,6 +189,8 @@ async function start(){
 }
 window.addEventListener('online',sync);
 window.addEventListener('focus',sync);
+window.addEventListener('focus',checkAdmin);
+document.addEventListener('visibilitychange',checkAdmin);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 window.addEventListener('storage',e=>{if(e.key===marker){location.reload();return}if(e.key===('duman-yok-personal-v2.'+active)||e.key===('izkarwell.water.v1.'+active)){if(!busy)location.reload()}});
 setInterval(()=>{if(!document.hidden)sync()},20000);

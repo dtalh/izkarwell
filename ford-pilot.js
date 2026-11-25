@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),base='https://dfexhuqdbcrjfhscmqjy.supabase.co',key='sb_publishable_orpnUOVOCwqMmNjsE0LVXQ_mG97SiVM',bucket='ford-pilot-private',dialog=$('fordPilotDialog');
 const sess=()=>window.izkarPushSession?.();
-let role='',owner='',busy=false,draft=null,offset=0,photoURL='',epoch=0,archiveReady=false,enhanced=false,editing=null,duplicateResolve=null;
+let role='',owner='',busy=false,draft=null,offset=0,photoURL='',epoch=0,archiveReady=false,enhanced=false,editing=null,duplicateResolve=null,corporateReady=false,realEnabled=false;
 const editors={account:window.izkarPhotoEditor.attach($('fordAccountFile'),$('fordAccountPreview')),ford:window.izkarPhotoEditor.attach($('fordAppFile'),$('fordAppPreview'))};
 const status=s=>$('fordStatus').textContent=s, canWrite=()=>['operator','admin'].includes(role), canReview=()=>['reviewer','admin'].includes(role);
 function guard(id){if(!id||sess()?.id!==id||owner!==id)throw Error('Oturum değişti.')}
@@ -41,7 +41,13 @@ async function access(){
  const id=owner;
  try{const rows=await (await req(rest+'work_module_members?select=role&module_key=eq.ford-pilot&user_id=eq.'+encodeURIComponent(id),{},id)).json();if(seq!==epoch||sess()?.id!==id)return;role=rows[0]?.role||'';updateWork()}catch{}
 }
-function setBusy(v){busy=v;if(!v)$('fordProgress').hidden=true;for(const id of ['fordFields','fordRefresh','fordExport','fordMore'])$(id).disabled=v}
+async function refreshGate(id=owner){
+ corporateReady=false;realEnabled=false;
+ try{const g=await (await rpc('ford_corporate_status',{},id)).json();guard(id);corporateReady=true;realEnabled=g.real_entry_enabled===true;role=g.role;updateWork()}catch(e){guard(id);$('fordGate').textContent='Sunucu yetkisi veya v2.1 kurulumu doğrulanamadı. İşlem yapılamaz.';$('fordList').replaceChildren();hidePhoto();if(e.http===401||e.http===403){role='';updateWork();if(dialog.open)dialog.close()}throw e}
+ $('fordGate').textContent=realEnabled?'Gerçek kayıt girişi açık. Yalnızca gerekli teyit verilerini yükle. Denemeler için TEST ile başlayan sentetik isim kullan.':'Gerçek kayıt girişi kapalı. Sadece TEST ile başlayan sentetik isimler ve örnek fotoğraflar kullan.';
+ $('fordName').placeholder=realEnabled?'Ad Soyad':'TEST Müşteri A';
+}
+function setBusy(v){busy=v;if(!v)$('fordProgress').hidden=true;for(const id of ['fordFields','fordRefresh','fordExport','fordMore','fordType'])$(id).disabled=v}
 async function ensurePhoto(id,kind,file,account){
  try{await photo(id,kind,account);return}catch(e){if(![400,404].includes(e.http))throw e}
  if(!file)throw Error('Eksik teyit fotoğrafını seç.');
@@ -67,10 +73,14 @@ $('fordDuplicateCancel').onclick=()=>resolveDuplicate(false);$('fordDuplicateCon
 $('fordForm').onsubmit=async e=>{
  e.preventDefault();if(busy||!canWrite())return;
  const account=owner,name=$('fordName').value.trim(),date=$('fordDate').value,a=$('fordAccount').checked,f=$('fordApp').checked;
- if(!/^TEST .{1,115}$/.test(name)){status('Örnek isim TEST ile başlamalı.');return}
+ if(name.length<3||name.length>120){status('Müşteri adı 3–120 karakter olmalı.');return}
  const id=editing?.id||draft?.id||crypto.randomUUID(),note=$('fordNote').value.trim(),af=$('fordAccountFile').files[0],ff=$('fordAppFile').files[0];
  setBusy(true);status('Kayıt hazırlanıyor…');
  try{
+  await refreshGate(account);guard(account);
+  const test=name.startsWith('TEST ');
+  if(!test&&!realEnabled){status('Gerçek müşteri girişi kapalı. Yalnızca sentetik TEST kaydı girilebilir.');return}
+  if(editing&&typeof editing.is_test==='boolean'&&editing.is_test!==test){status('Test ve gerçek kayıt türü değiştirilemez.');return}
   if(!draft&&(!editing||editing.customer_name!==name||editing.delivery_date!==date)&&!await duplicateWarning(name,date,editing?.id,account)){if(owner===account)status('İşlem iptal edildi.');return}
   guard(account);
   if(editing){
@@ -80,18 +90,20 @@ $('fordForm').onsubmit=async e=>{
   }
   const payload={p_id:id,p_name:name,p_date:date,p_account:a,p_ford:f};
   if(enhanced)await rpc('ford_pilot_begin_v2',{...payload,p_note:note},account);else await rpc('ford_pilot_begin',payload,account);
-  draft={id,customer_name:name,delivery_date:date,account_done:a,ford_done:f,created_by:account,status:'draft',incomplete_note:note};
+  draft={id,is_test:test,customer_name:name,delivery_date:date,account_done:a,ford_done:f,created_by:account,status:'draft',incomplete_note:note};
   for(const id of ['fordName','fordDate','fordAccount','fordApp'])$(id).disabled=true;toggle();
   if(a){status('Ford Hesabım fotoğrafı kaydediliyor…');await ensurePhoto(id,'account',af,account)}
   if(f){status('Ford fotoğrafı kaydediliyor…');await ensurePhoto(id,'ford',ff,account)}
-  await rpc('ford_pilot_finish',{p_id:id},account);guard(account);reset();status('Kayıt sunucuya kaydedildi.');await list(true)
+  await rpc('ford_pilot_finish',{p_id:id},account);guard(account);reset();$('fordType').value=test?'test':'real';status('Kayıt sunucuya kaydedildi.');await list(true)
  }catch(err){if(owner===account)status(readable(err)+' Taslak varsa kayıtlar bölümünden devam edebilirsin.')}
  finally{setBusy(false)}
 };
 async function rows(start,limit,id=owner){
  const fields='id,created_by,customer_name,delivery_date,account_done,ford_done,status,created_at,completed_at';
- const q=new URLSearchParams({select:fields+',incomplete_note,revision',order:'created_at.desc,id.desc',offset:String(start),limit:String(limit),archived_at:'is.null'});
- try{const result=await (await req(rest+'ford_pilot_records?'+q,{},id)).json();archiveReady=true;enhanced=true;$('fordNoteLabel').hidden=false;return result}catch(e){if(e.http!==400)throw e;enhanced=false;$('fordNoteLabel').hidden=true;q.set('select',fields)}
+ const q=new URLSearchParams({select:fields+',incomplete_note,revision'+(corporateReady?',is_test':''),order:'created_at.desc,id.desc',offset:String(start),limit:String(limit),archived_at:'is.null'});
+ if(corporateReady&&$('fordType').value!=='all')q.set('is_test','eq.'+($('fordType').value==='test'));
+ if(!corporateReady)throw Error('v2.1 SQL kurulumu ve yetki doğrulaması gerekli.');
+ try{const result=await (await req(rest+'ford_pilot_records?'+q,{},id)).json();archiveReady=true;enhanced=true;$('fordNoteLabel').hidden=false;return result}catch(e){if(e.http!==400||corporateReady)throw e;enhanced=false;$('fordNoteLabel').hidden=true;q.set('select',fields)}
  try{const result=await (await req(rest+'ford_pilot_records?'+q,{},id)).json();archiveReady=true;return result}catch(e){if(e.http!==400)throw e;archiveReady=false;q.delete('archived_at');return (await req(rest+'ford_pilot_records?'+q,{},id)).json()}
 }
 function button(label,fn){const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=label;b.onclick=fn;return b}
@@ -121,22 +133,23 @@ async function list(resetList){
  const data=await rows(offset,25,id);guard(id);
  for(const r of data){
   const section=document.createElement('section'),h=document.createElement('h2'),p=document.createElement('p');
-  h.textContent=r.customer_name;p.textContent=r.delivery_date+' · '+(r.status==='complete'?'Kaydedildi':'Taslak')+' · Ford Hesabım: '+(r.account_done?'Evet':'Hayır')+' · Ford: '+(r.ford_done?'Evet':'Hayır');section.append(h,p);if(r.incomplete_note){const note=document.createElement('p');note.textContent='Açıklama: '+r.incomplete_note;section.append(note)}
+  h.textContent=r.customer_name+(r.is_test!==false?' · Test':'');p.textContent=r.delivery_date+' · '+(r.status==='complete'?'Kaydedildi':'Taslak')+' · Ford Hesabım: '+(r.account_done?'Evet':'Hayır')+' · Ford: '+(r.ford_done?'Evet':'Hayır');section.append(h,p);if(r.incomplete_note){const note=document.createElement('p');note.textContent='Açıklama: '+r.incomplete_note;section.append(note)}
   if(r.status==='draft'&&r.created_by===id&&canWrite())section.append(button('Taslağa devam et',()=>resume(r)));
   if(r.status==='complete'){if(r.account_done)section.append(button('Hesabım fotoğrafı',()=>view(r,'account')));if(r.ford_done)section.append(button('Ford fotoğrafı',()=>view(r,'ford')))}
   if(enhanced&&r.status==='complete'&&canWrite()&&(role==='admin'||r.created_by===id))section.append(button('Düzenle',()=>edit(r)));
   if(role==='admin'&&archiveReady)section.append(button('Sil',()=>removeRecord(r)));
   $('fordList').append(section)
  }
- offset+=data.length;$('fordMore').hidden=data.length<25;$('fordScope').textContent=(canReview()?'Yetkili olduğun test kayıtları':'Kendi test kayıtların')+' · '+offset+' kayıt gösteriliyor.'
+ offset+=data.length;$('fordMore').hidden=data.length<25;$('fordScope').textContent=(canReview()?'Yetkili olduğun kayıtlar':'Kendi kayıtların')+' · '+offset+' kayıt gösteriliyor.'
 }
-async function refresh(resetList=true){if(busy)return;setBusy(true);try{await list(resetList)}catch(e){status(e.message)}finally{setBusy(false)}}
+async function refresh(resetList=true){if(busy)return;setBusy(true);try{await refreshGate(owner);await list(resetList)}catch(e){status(e.message)}finally{setBusy(false)}}
 async function hash(blob){const h=await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
 function dataURL(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob)})}
 $('fordExport').onclick=async()=>{
- if(busy||!canReview()||!confirm('Tamamlanmış TEST kayıtlarının fotoğraflı yedeğini indir? Güvenli bir yerde sakla.'))return;
+ if(busy||!canReview()||!confirm('Seçili tamamlanmış kayıtları ve fotoğrafları dışa aktar? Güvenli bir yerde sakla.'))return;
  const account=owner;setBusy(true);
  try{
+  await refreshGate(account);if(!canReview())throw Error('Rapor yetkin yok.');
   let all=[],page=0;
   while(true){const batch=await rows(page,25,account);all.push(...batch);if(all.length>200)throw Error('Pilot yedeği 200 kayıtla sınırlı.');if(batch.length<25)break;page+=batch.length}
   const records=[];
@@ -144,13 +157,13 @@ $('fordExport').onclick=async()=>{
    for(const [kind,done] of [['account',r.account_done],['ford',r.ford_done]])if(done){const b=await photo(r.id,kind,account);images[kind]={bytes:b.size,sha256:await hash(b),data:await dataURL(b)}}
    records.push({record:r,images})
   }
-  guard(account);const blob=new Blob([JSON.stringify({format:'izkarwell-ford-pilot-1',created_at:new Date().toISOString(),records})],{type:'application/json'});
-  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='izkarwell-ford-test-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);status(records.length+' tamamlanmış kayıt ve fotoğrafları yedek dosyasına hazırlandı. Geri yükleme henüz yok.')
+  guard(account);for(let i=0;i<Math.max(1,all.length);i+=250){if(await (await rpc('ford_corporate_check_export',{p_ids:all.slice(i,i+250).map(r=>r.id)},account)).json()!==true)throw Error('Rapor yetkin yok.')}const blob=new Blob([JSON.stringify({format:'izkarwell-ford-pilot-1',created_at:new Date().toISOString(),records})],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='izkarwell-ford-kayitlari.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);status(records.length+' tamamlanmış kayıt ve fotoğrafları yedek dosyasına hazırlandı. Geri yükleme henüz yok.')
  }catch(e){status(e.message)}finally{setBusy(false)}
 };
 function openFord(mode){if(!role||!owner||busy||dialog.open)return;clear();$('fordForm').hidden=!canWrite();$('fordExport').hidden=!canReview();dialog.showModal();refresh().then(()=>{if(dialog.open&&mode==='records')$('fordList').scrollIntoView({block:'start'})})}
 $('fordOpen').onclick=()=>openFord('records');$('homeNewFord').onclick=()=>openFord('new');$('homeFordRecords').onclick=()=>openFord('records');
 $('fordClose').onclick=()=>{if(!busy)dialog.close()};dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault()});dialog.addEventListener('close',clear);
 $('fordAccount').onchange=toggle;$('fordApp').onchange=toggle;$('fordPhotoClose').onclick=hidePhoto;$('fordRefresh').onclick=()=>refresh();$('fordMore').onclick=()=>refresh(false);
-window.addEventListener('izkarwell-auth',access);access();
+$('fordType').onchange=()=>{if(!busy)refresh()};window.addEventListener('izkarwell-auth',access);access();
 })();
