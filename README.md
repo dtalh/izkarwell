@@ -4,6 +4,10 @@
 
 [Uygulamayı aç](https://dtalh.github.io/izkarwell/) · [Yönetim merkezi](https://dtalh.github.io/izkarwell/admin/overview.html) · [Ford yönetimi](https://dtalh.github.io/izkarwell/admin/) · [Sürüm notları](CHANGELOG.md) · [Ford pilot test kılavuzu](docs/ford-pilot-test.md)
 
+## v2.1 — Kurumsal Pilot hazırlığı
+Gerçek müşteri girişi varsayılan olarak **kapalıdır**. `20261125_ford_corporate_preparation.sql`, tüm v2.0 migration'ları sonrasında uygulanır. Mevcut kayıtlar TEST olarak sınıflandırılır; yeni kayıt türü sunucuda atanır ve değiştirilemez. TEST ile başlayan sentetik örnekler kullanılabilir; gerçek kişisel veriyi TEST etiketiyle yüklemek de yasaktır. Gerçek kayıtlar varsayılan rapor ve Genel Bakış kapsamıdır. Test verileri ayrı filtrelenebilir. İndirmelerde güncel sunucu yetkisi tekrar kontrol edilir. Mevcut kullanıcı ve modül yönetimi korunur.
+Bu sürüm SQL kurulumu olmadan Ford işlemlerine izin vermez; kişisel modüller bağımsızdır. Yayın öncesi SQL kurulumu ve sentetik kullanıcı/RLS/Storage testleri gerekir. Gerçek giriş ancak şirket/KVKK/yurt dışı aktarım, güvenlik, dosya doğrulama ve doğrulanmış yedek/geri yükleme onayları tamamlandıktan sonra ayrı bir kararla etkinleştirilebilir. Ayrıntı: [kurumsal pilot hazırlık kılavuzu](docs/corporate-pilot.md).
+
 ## Foundation Update — v2.0 pilot
 - Mobil çalışma alanı: İş Merkezi, İyi Yaşam, Bildirimler, Profil; yetkiye göre modüller ve hızlı işlemler. Aktif Yaşam ve Uyku kaldırıldı.
 - Yönetim merkezi: genel bakış, gerçek kayıt göstergeleri, ortak tema, personel/tarih/durum filtreleri, kayıtlı filtreler, sayfalama, XLSX personel özeti, ZIP ve tam ekran fotoğraf.
