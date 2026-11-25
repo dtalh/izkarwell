@@ -20,3 +20,15 @@ test('Excel has 3 worksheets and user strings cannot become formulas; ZIP bytes 
  assert.equal(x.size,8);assert.match(new TextDecoder().decode(x.get('xl/workbook.xml')),/name="Personel"/);const cell=new TextDecoder().decode(x.get('xl/worksheets/sheet1.xml'));assert.match(cell,/=1\+1 &amp; &lt;A&gt;/);assert.doesNotMatch(cell,/<f>/);
  const src=new Uint8Array([255,216,0,255,217]),z=await parse(window.izkarFordZip([['photo.jpg',src]]));assert.deepEqual(z.get('photo.jpg'),src)
 });
+
+test('Corporate migration dollar quotes and photo read helper permission',()=>{
+ const s=read('supabase/migrations/20261125_ford_corporate_preparation.sql');
+ const lines=s.split('\n');
+ const opens=lines.filter(l=>/^(do|returns)\b.*\$\$$/.test(l)).length;
+ const closes=lines.filter(l=>/^(end )?\$\$;$/.test(l)).length;
+ assert.equal(opens,11);assert.equal(closes,opens);
+ assert.equal((s.match(/\$\$/g)||[]).length,opens*2);
+ assert.ok(!s.replace(/\$\$/g,'').includes('$'));
+ assert.match(s,/grant execute on function [^\n]*public\.ford_corporate_can_read\(text\)[^\n]* to authenticated;/);
+ assert.match(s,/on conflict\(singleton\) do update set real_entry_enabled=false;/);
+});
